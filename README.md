@@ -10,9 +10,10 @@
 Зависимости для сборки:
 - [] Qt6.7
 - [] [OPC Core Components](https://opcfoundation.org/developer-tools/samples-and-tools-classic/core-components/)  
-- [] ZLIB Library
-- [] CURL library
-- [] Boost Asio
+- [] OpenSSL
+- [] ZLib
+- [] Libcurl
+- [] Boost
 
 ![](https://github.com/jkapter/OPC_DA_Telegram_bot/blob/main/img/OPC_DA_Telegram_bot_opc_main.png)
 ![](https://github.com/jkapter/OPC_DA_Telegram_bot/blob/main/img/OPC_DA_Telegram_bot_messages_example.png)
