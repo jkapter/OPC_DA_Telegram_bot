@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>TGMessageConfigurationWidget</class>
+ <widget class="QWidget" name="TGMessageConfigurationWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>565</width>
+    <height>638</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QGroupBox" name="groupBox_18">
+     <property name="title">
+      <string>ID сообщения</string>
+     </property>
+     <property name="flat">
+      <bool>false</bool>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_30">
+      <item>
+       <widget class="QLineEdit" name="leMessageID"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_17">
+     <property name="title">
+      <string>Текст сообщения</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_29">
+      <item>
+       <widget class="QPlainTextEdit" name="ptMessage">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>150</height>
+         </size>
+        </property>
+        <property name="sizeAdjustPolicy">
+         <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContents</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPlainTextEdit" name="ptMessageFormatHint1_4">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>80</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>300</height>
+         </size>
+        </property>
+        <property name="inputMethodHints">
+         <set>Qt::InputMethodHint::ImhNone</set>
+        </property>
+        <property name="sizeAdjustPolicy">
+         <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContents</enum>
+        </property>
+        <property name="undoRedoEnabled">
+         <bool>false</bool>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="plainText">
+         <string>Форматирование текста
+*жирный*
+_курсив_
+__подчеркнутый__
+~зачеркнутый~
+||спойлер||
+[встроенная ссылка](http://www.example.com/)
+[ссылка на пользователя](tg://user?id=123456789)
+![👍](tg://emoji?id=5368324170671202286)</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_19">
+     <property name="title">
+      <string>ОРС Тэги</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_31">
+      <item>
+       <widget class="QTableWidget" name="twOPCTagsList"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="gbInlineButtons">
+     <property name="title">
+      <string>Действия</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_32"/>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

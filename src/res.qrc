@@ -1,0 +1,42 @@
+<RCC>
+    <qresource prefix="/">
+        <file>../img/TreeTelegram.png</file>
+        <file>../img/TreeTelegram_bright.png</file>
+        <file>../img/icons/menu.svg</file>
+        <file>../img/icons/refresh-cw.svg</file>
+        <file>../img/icons/save.svg</file>
+        <file>../img/icons/x-square.svg</file>
+        <file>../img/icons/log-out.svg</file>
+        <file>../img/icons/OPCFind.png</file>
+        <file>../img/icons/OPCDataConnection.png</file>
+        <file>../img/icons/play.svg</file>
+        <file>../img/icons/x-circle.svg</file>
+        <file>../img/icons/accon-server-advantage-opc-foundation_800x800.png</file>
+        <file>../img/icons/skip-forward.svg</file>
+        <file>../img/icons/telegram_settings.png</file>
+        <file>../img/icons/telegram_bot.png</file>
+        <file>../img/icons/add_admin.png</file>
+        <file>../img/icons/delete_admin.png</file>
+        <file>../img/icons/verified-user.png</file>
+        <file>../img/icons/send-message.png</file>
+        <file>../img/icons/send-messages-all.png</file>
+        <file>../img/icons/block-user_2.png</file>
+        <file>../img/icons/add-message.png</file>
+        <file>../img/icons/delete-message.png</file>
+        <file>../img/icons/save-message.png</file>
+        <file>../img/icons/add_command.png</file>
+        <file>../img/icons/add_to_main_menu_command.png</file>
+        <file>../img/icons/delete_command.png</file>
+        <file>../img/icons/save_command.png</file>
+        <file>../img/icons/add_event.png</file>
+        <file>../img/icons/delete_event.png</file>
+        <file>../img/icons/save_event.png</file>
+        <file>../img/icons/inline_btns_add.png</file>
+        <file>../img/icons/inline_btns_delete.png</file>
+        <file>../img/icons/inline_btns_save.png</file>
+        <file>../img/icons/open_folder.png</file>
+        <file>../styles/styles.qss</file>
+        <file>../img/icons/check-mark.png</file>
+        <file>../img/icons/add_sch_event.png</file>
+    </qresource>
+</RCC>

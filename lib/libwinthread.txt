@@ -1,0 +1,12 @@
+libwinpthread-rc.a - стандартная библиотека "POSIX Threads for Windows" из пакета компилятора "11.2.0 MinGW-w64-x86_64-11.2.0-release-posix-seh-rt_v9-rev3" 
+c удаленным из архива библиотеки ресурсным файлом "version.o".
+Иначе при статической линковке библиотеки свойства приложения подменяются свойствами из этого ресурсного файла вида:
+==
+Original Filename: WinPthreadGC
+Product Name:
+Company Name: MingW-W64 Project. All rights reserved.
+File Version: 1, 0, 0, 0
+Product Version: 1, 0, 0, 0
+Language: English (United States)
+Legal Copyright: Copyright (C) MingW-W64 Project Members 2010-2011
+==

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<CoDeSysSymbolTable>
+	<SymbolHeader>
+		<Version>-1</Version>
+		<ProjectId>85548</ProjectId>
+		<WorkbenchVersion>2.3.8.1</WorkbenchVersion>
+		<CompilerVersion>2.3.8.1</CompilerVersion>
+	</SymbolHeader>
+	<SymbolTypeList>
+		<TypeSimple TypeId="0" Size="1">BOOL</TypeSimple>
+		<TypeSimple TypeId="1" Size="1">SINT</TypeSimple>
+		<TypeSimple TypeId="2" Size="2">INT</TypeSimple>
+		<TypeSimple TypeId="3" Size="4">DINT</TypeSimple>
+		<TypeSimple TypeId="4" Size="2">UINT</TypeSimple>
+		<TypeSimple TypeId="5" Size="4">UDINT</TypeSimple>
+		<TypeSimple TypeId="6" Size="4">REAL</TypeSimple>
+		<TypeSimple TypeId="7" Size="8">LREAL</TypeSimple>
+		<TypeSimple TypeId="8" Size="4">TIME</TypeSimple>
+		<TypeUserdef TypeId="9" Size="15">
+			<Name>TON</Name>
+			<Var Type="0" Flags="256" Access="114" RefId="24" Offset="0">M</Var>
+			<Var Type="8" Flags="256" Access="114" RefId="24" Offset="1">StartTime</Var>
+			<Var Type="0" Flags="257" Access="114" RefId="24" Offset="5">IN</Var>
+			<Var Type="8" Flags="257" Access="114" RefId="24" Offset="6">PT</Var>
+			<Var Type="0" Flags="258" Access="114" RefId="24" Offset="10">Q</Var>
+			<Var Type="8" Flags="258" Access="114" RefId="24" Offset="11">ET</Var>
+		</TypeUserdef>
+	</SymbolTypeList>
+	<SymbolVarList>
+		<Var Type="0" Flags="64" Access="98" RefId="4" Offset="152">PLC_PRG.blVar</Var>
+		<Var Type="3" Flags="64" Access="98" RefId="4" Offset="156">PLC_PRG.dintVal</Var>
+		<Var Type="7" Flags="64" Access="98" RefId="4" Offset="170">PLC_PRG.doubleVal</Var>
+		<Var Type="6" Flags="64" Access="98" RefId="4" Offset="166">PLC_PRG.floatVal</Var>
+		<Var Type="2" Flags="64" Access="98" RefId="4" Offset="154">PLC_PRG.intVal</Var>
+		<Var Type="9" Flags="268435520" Access="98" RefId="4" Offset="178" TopLevelType="9">PLC_PRG.oneSecT</Var>
+		<Var Type="8" Flags="2" Access="98" RefId="4" Offset="189" TopLevelType="9">PLC_PRG.oneSecT.ET</Var>
+		<Var Type="0" Flags="1" Access="98" RefId="4" Offset="183" TopLevelType="9">PLC_PRG.oneSecT.IN</Var>
+		<Var Type="0" Flags="0" Access="98" RefId="4" Offset="178" TopLevelType="9">PLC_PRG.oneSecT.M</Var>
+		<Var Type="8" Flags="1" Access="98" RefId="4" Offset="184" TopLevelType="9">PLC_PRG.oneSecT.PT</Var>
+		<Var Type="0" Flags="2" Access="98" RefId="4" Offset="188" TopLevelType="9">PLC_PRG.oneSecT.Q</Var>
+		<Var Type="8" Flags="0" Access="98" RefId="4" Offset="179" TopLevelType="9">PLC_PRG.oneSecT.StartTime</Var>
+		<Var Type="1" Flags="64" Access="98" RefId="4" Offset="153">PLC_PRG.shortVal</Var>
+		<Var Type="5" Flags="64" Access="98" RefId="4" Offset="162">PLC_PRG.udintVal</Var>
+		<Var Type="4" Flags="64" Access="98" RefId="4" Offset="160">PLC_PRG.uintVal</Var>
+	</SymbolVarList>
+	<SymbolTaskList/>
+	<SymbolTargetSettings>
+		<MaxNumberOfPOUs>512</MaxNumberOfPOUs>
+		<Segments>
+			<Segment Area="0" RefId="0" Address="0" Size="32768" Attributes="0"/>
+			<Segment Area="0" RefId="1" Address="32768" Size="32768" Attributes="0"/>
+			<Segment Area="0" RefId="2" Address="65536" Size="32768" Attributes="0"/>
+			<Segment Area="1" RefId="3" Address="0" Size="32768" Attributes="2"/>
+			<Segment Area="0" RefId="4" Address="98304" Size="2097152" Attributes="1"/>
+		</Segments>
+	</SymbolTargetSettings>
+</CoDeSysSymbolTable>
