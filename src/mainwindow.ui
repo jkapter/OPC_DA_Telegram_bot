@@ -231,8 +231,8 @@
              <property name="verticalSpacing">
               <number>12</number>
              </property>
-             <item row="1" column="2">
-              <widget class="QLabel" name="lbMainMenu2">
+             <item row="0" column="2">
+              <widget class="QLabel" name="lbMainMenu1">
                <property name="font">
                 <font>
                  <pointsize>12</pointsize>
@@ -246,13 +246,42 @@
                 <enum>QFrame::Shadow::Plain</enum>
                </property>
                <property name="text">
-                <string>Данные ОРС</string>
+                <string>Обзор серверов</string>
                </property>
                <property name="margin">
                 <number>10</number>
                </property>
                <property name="textInteractionFlags">
                 <set>Qt::TextInteractionFlag::NoTextInteraction</set>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0">
+              <widget class="QToolButton" name="pbSaveDataFiles">
+               <property name="minimumSize">
+                <size>
+                 <width>40</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>40</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="res.qrc">
+                 <normaloff>:/img/icons/save.svg</normaloff>:/img/icons/save.svg</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
                </property>
               </widget>
              </item>
@@ -285,8 +314,8 @@
                </property>
               </widget>
              </item>
-             <item row="2" column="0">
-              <widget class="QPushButton" name="pbTgSettingsPage">
+             <item row="3" column="0">
+              <widget class="QPushButton" name="pbTGConfigPage">
                <property name="minimumSize">
                 <size>
                  <width>40</width>
@@ -304,13 +333,51 @@
                </property>
                <property name="icon">
                 <iconset resource="res.qrc">
-                 <normaloff>:/img/icons/telegram_settings.png</normaloff>:/img/icons/telegram_settings.png</iconset>
+                 <normaloff>:/img/icons/telegram_bot.png</normaloff>:/img/icons/telegram_bot.png</iconset>
                </property>
                <property name="iconSize">
                 <size>
                  <width>30</width>
                  <height>30</height>
                 </size>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="2">
+              <spacer name="verticalSpacer">
+               <property name="orientation">
+                <enum>Qt::Orientation::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="1" column="2">
+              <widget class="QLabel" name="lbMainMenu2">
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="frameShape">
+                <enum>QFrame::Shape::NoFrame</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Shadow::Plain</enum>
+               </property>
+               <property name="text">
+                <string>Данные ОРС</string>
+               </property>
+               <property name="margin">
+                <number>10</number>
+               </property>
+               <property name="textInteractionFlags">
+                <set>Qt::TextInteractionFlag::NoTextInteraction</set>
                </property>
               </widget>
              </item>
@@ -368,32 +435,6 @@
                </property>
               </widget>
              </item>
-             <item row="2" column="2">
-              <widget class="QLabel" name="lbMainMenu3">
-               <property name="font">
-                <font>
-                 <pointsize>12</pointsize>
-                 <bold>true</bold>
-                </font>
-               </property>
-               <property name="frameShape">
-                <enum>QFrame::Shape::NoFrame</enum>
-               </property>
-               <property name="frameShadow">
-                <enum>QFrame::Shadow::Plain</enum>
-               </property>
-               <property name="text">
-                <string>Настройки 
-Телеграмм</string>
-               </property>
-               <property name="margin">
-                <number>10</number>
-               </property>
-               <property name="textInteractionFlags">
-                <set>Qt::TextInteractionFlag::NoTextInteraction</set>
-               </property>
-              </widget>
-             </item>
              <item row="3" column="2">
               <widget class="QLabel" name="lbMainMenu4">
                <property name="font">
@@ -419,43 +460,34 @@
                </property>
               </widget>
              </item>
-             <item row="0" column="2">
-              <widget class="QLabel" name="lbMainMenu1">
-               <property name="font">
-                <font>
-                 <pointsize>12</pointsize>
-                 <bold>true</bold>
-                </font>
-               </property>
-               <property name="frameShape">
-                <enum>QFrame::Shape::NoFrame</enum>
-               </property>
-               <property name="frameShadow">
-                <enum>QFrame::Shadow::Plain</enum>
-               </property>
-               <property name="text">
-                <string>Обзор серверов</string>
-               </property>
-               <property name="margin">
-                <number>10</number>
-               </property>
-               <property name="textInteractionFlags">
-                <set>Qt::TextInteractionFlag::NoTextInteraction</set>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="2">
-              <spacer name="verticalSpacer">
-               <property name="orientation">
-                <enum>Qt::Orientation::Vertical</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
+             <item row="0" column="0">
+              <widget class="QPushButton" name="pbOPCBrowsePage">
+               <property name="minimumSize">
                 <size>
-                 <width>20</width>
+                 <width>40</width>
                  <height>40</height>
                 </size>
                </property>
-              </spacer>
+               <property name="maximumSize">
+                <size>
+                 <width>40</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="res.qrc">
+                 <normaloff>:/img/icons/OPCFind.png</normaloff>:/img/icons/OPCFind.png</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
+              </widget>
              </item>
              <item row="1" column="0">
               <widget class="QPushButton" name="pbOPCManagePage">
@@ -486,37 +518,8 @@
                </property>
               </widget>
              </item>
-             <item row="5" column="0">
-              <widget class="QToolButton" name="pbSaveDataFiles">
-               <property name="minimumSize">
-                <size>
-                 <width>40</width>
-                 <height>40</height>
-                </size>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>40</width>
-                 <height>40</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>...</string>
-               </property>
-               <property name="icon">
-                <iconset resource="res.qrc">
-                 <normaloff>:/img/icons/save.svg</normaloff>:/img/icons/save.svg</iconset>
-               </property>
-               <property name="iconSize">
-                <size>
-                 <width>30</width>
-                 <height>30</height>
-                </size>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0">
-              <widget class="QPushButton" name="pbTGConfigPage">
+             <item row="2" column="0">
+              <widget class="QPushButton" name="pbTgSettingsPage">
                <property name="minimumSize">
                 <size>
                  <width>40</width>
@@ -534,7 +537,7 @@
                </property>
                <property name="icon">
                 <iconset resource="res.qrc">
-                 <normaloff>:/img/icons/telegram_bot.png</normaloff>:/img/icons/telegram_bot.png</iconset>
+                 <normaloff>:/img/icons/telegram_settings.png</normaloff>:/img/icons/telegram_settings.png</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -544,32 +547,29 @@
                </property>
               </widget>
              </item>
-             <item row="0" column="0">
-              <widget class="QPushButton" name="pbOPCBrowsePage">
-               <property name="minimumSize">
-                <size>
-                 <width>40</width>
-                 <height>40</height>
-                </size>
+             <item row="2" column="2">
+              <widget class="QLabel" name="lbMainMenu3">
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                 <bold>true</bold>
+                </font>
                </property>
-               <property name="maximumSize">
-                <size>
-                 <width>40</width>
-                 <height>40</height>
-                </size>
+               <property name="frameShape">
+                <enum>QFrame::Shape::NoFrame</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Shadow::Plain</enum>
                </property>
                <property name="text">
-                <string/>
+                <string>Настройки 
+Телеграмм</string>
                </property>
-               <property name="icon">
-                <iconset resource="res.qrc">
-                 <normaloff>:/img/icons/OPCFind.png</normaloff>:/img/icons/OPCFind.png</iconset>
+               <property name="margin">
+                <number>10</number>
                </property>
-               <property name="iconSize">
-                <size>
-                 <width>30</width>
-                 <height>30</height>
-                </size>
+               <property name="textInteractionFlags">
+                <set>Qt::TextInteractionFlag::NoTextInteraction</set>
                </property>
               </widget>
              </item>

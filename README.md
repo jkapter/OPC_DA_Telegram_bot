@@ -11,9 +11,9 @@
 - [] Qt6.7
 - [] [OPC Core Components](https://opcfoundation.org/developer-tools/samples-and-tools-classic/core-components/)  
 - [] OpenSSL
-- [] ZLib
 - [] Libcurl
 - [] Boost
 
 ![](https://github.com/jkapter/OPC_DA_Telegram_bot/blob/main/img/OPC_DA_Telegram_bot_opc_main.png)
 ![](https://github.com/jkapter/OPC_DA_Telegram_bot/blob/main/img/OPC_DA_Telegram_bot_messages_example.png)
+![](https://github.com/jkapter/OPC_DA_Telegram_bot/blob/main/img/Screenshot_20260117-142327_Telegram.jpg)
