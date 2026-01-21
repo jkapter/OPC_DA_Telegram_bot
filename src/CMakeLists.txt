@@ -3,9 +3,7 @@ set(GARDEN FALSE)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wunknown-pragmas")
 set(Boost_USE_MULTITHREADED ON)
-#set(ZLIB_LIBRARY "C:/Program Files (x86)/GnuWin32/bin")
 set(OPENSSL_ROOT_DIR "C:/Qt/Tools/mingw1310_64/opt")
-#set(ZLIB_INCLUDE_DIR "C:/Program Files (x86)/GnuWin32/include")
 set(OLELIB "-lole32")
 
 if(HOME)
