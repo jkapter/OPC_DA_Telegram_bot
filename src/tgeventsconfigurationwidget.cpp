@@ -244,6 +244,7 @@ void TGEventsConfigurationWidget::load_data_from_event_(const std::string &id)
     }
 
     ui->leEventID->setText(QString::fromStdString(current_event_->GetId()));
+    ui->leEventID->setEnabled(true);
     auto [tag_ptr, type, ival, ihys] = current_event_->GetTagTrigger();
     if(tag_ptr) {
         ui->leTagNameEvent->setText(QString("%1: %2").arg(tg_bot_manager_.GetTGParent()->OPCManager()->GetTagId(tag_ptr->GetTagName())).arg(tag_ptr->GetTagName()));
@@ -297,6 +298,7 @@ void TGEventsConfigurationWidget::load_data_from_scheduled_event_(const std::str
 
     sl_make_scheduled_events_layout(static_cast<int>(period));
 
+    ui->leScheduledEventID->setEnabled(true);
     ui->cbScheduledEventType->setCurrentIndex(static_cast<int>(period));
     ui->cbScheduledEventType->setEnabled(true);
     ui->sbScheduledEventMinute->setValue(time.minute());

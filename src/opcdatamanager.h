@@ -2,7 +2,7 @@
 #define OPCDATAMANAGER_H
 
 #include <QObject>
-
+#include <QRegularExpression>
 #include <set>
 
 #include "copcclient.h"
@@ -18,23 +18,36 @@ enum class TAG_STATUS {
     READ_BOTH
 };
 
+struct OPC_PERIODIC_THREAD_STATUS {
+    QString opc_hostname;
+    int errors_periodic_opc_server_count = 0;
+    int errors_server_status_periodic_count = 0;
+    int opc_period_reading = 2;
+    bool period_reading_on = false;
+    bool request_stop_periodic_reading = false;
+};
+
 class OPCDataManager: public QObject
 {
     Q_OBJECT
 public:
     OPCDataManager();
     ~OPCDataManager();
-    TAG_STATUS CheckTagReadState(QString tag_name) const;
-    size_t AddTagToPeriodicReadList(QString server_name, QString tag_name);
-    size_t DeleteTagFromPeriodicRead(QString tag_name);
-    size_t GetTagId(QString tag_name) const;
+    TAG_STATUS CheckTagReadState(const QString& tag_name) const;
+    size_t AddTagToPeriodicReadList(const QString& hostname, const QString& server_name, const QString& tag_name);
+    size_t AddTagToPeriodicReadList(const QString& full_tag_name);
+    size_t DeleteTagFromPeriodicRead(const QString& tag_name);
+    size_t GetTagId(const QString& tag_name) const;
+    size_t GetTagId(const QString& hostname, const QString& server_name, const QString& tag_name) const;
     void ClearMonitoringTags();
     std::vector<std::shared_ptr<OPCTag>> GetPeriodicTags() const;
+    std::vector<std::shared_ptr<OPCTag>> GetPeriodicTags(const QString& hostname) const;
     std::map<size_t, std::shared_ptr<OPCTag>> GetIdToTagPeriodicTags() const;
     std::shared_ptr<OPCTag> GetOPCTag(size_t id) const;
+    const std::set<QString>& GetHostNames() const;
     bool SaveDataToFile();
     bool SaveDataToFile(const QString& folderpath);
-    bool RestoreDataFromFile(bool json_option = true);
+    bool RestoreDataFromFile();
     bool PeriodicReadingOn() const;
     int GetPeriodReading() const;
     void SetPeriodReading(int period);
@@ -63,19 +76,22 @@ private slots:
     void sl_thread_on_request_started();
     void sl_thread_on_request_finished();
     void sl_thread_send_exception(QString text);
-    void sl_thread_send_opc_status(QString server, OPCSERVERSTATE state);
+    void sl_thread_send_opc_status(QString host, QString server, OPCSERVERSTATE state);
     void sl_thread_period_reading_complete(size_t n_tags);
     void sl_thread_onrequest_reading_complete(size_t n_tags);
 
 private:
     const int TIME_WAITING_THREAD_ = 600;
     const int MAX_PERIODIC_ERRORS_COUNT = 10;
+    QRegularExpression tag_name_check_re_;
     size_t last_id_ = 0;
     bool period_reading_on_ = false;
     bool request_stop_periodic_reading_ = false;
     int opc_threads_on_request_count_ = 0;
     std::set<QString> tag_names_;
-    std::set<QString> server_names_;
+    std::set<QString> hostnames_;
+    std::unordered_map<const QString*, std::set<QString>> host_to_opc_servers_;
+    std::unordered_map<const QString*, const QString*> opc_server_to_host_;
     std::unordered_map<const QString*, size_t> tag_name_to_id_;
     std::unordered_map<size_t, const QString*> id_tag_to_name_tag_;
     std::unordered_map<const QString*, std::set<size_t>> opc_server_name_to_id_tags_set_;
@@ -83,15 +99,14 @@ private:
     std::unordered_map<size_t, std::shared_ptr<OPCTag>> id_tag_to_OPCTag_pointer_;
     std::set<size_t> opc_tags_id_value_controlled_;
 
-    size_t check_or_add_tag_(const QString& server_name, const QString& tag_name);
+    size_t check_or_add_tag_(const QString& hostname, const QString& server_name, const QString& tag_name);
+    size_t check_or_add_tag_(const QString& full_tag_name);
 
     int errors_periodic_opc_server_count_ = 0;
     int errors_server_status_periodic_count_ = 0;
     int opc_period_reading_ = 2;
 
-    bool restore_data_from_dat_();
     bool restore_data_from_json_();
-
     void start_period_reading_();
 };
 

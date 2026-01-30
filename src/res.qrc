@@ -38,5 +38,7 @@
         <file>../styles/styles.qss</file>
         <file>../img/icons/check-mark.png</file>
         <file>../img/icons/add_sch_event.png</file>
+        <file>../img/icons/question_mark_icon.png</file>
+        <file>../img/icons/circle_green_checkmark.svg</file>
     </qresource>
 </RCC>

@@ -3,6 +3,8 @@
 
 #include <QString>
 #include <QDebug>
+#include <QRegularExpression>
+#include <QRegularExpressionMatch>
 
 #include "opcda.h"
 
@@ -27,14 +29,18 @@ class OPCTag
 {
 public:
     OPCTag() = delete;
+    explicit OPCTag(const QString& fullname);
     explicit OPCTag(const QString& server_name, const QString& tag_name);
+    explicit OPCTag(const QString& hostname, const QString& server_name, const QString& tag_name);
 
     void SetType(VARENUM type);
     tagOPCITEMDEF GetItemDefStruct();
     void SetOPCItemState(tagOPCITEMSTATE* item_state);
     FILETIME GetLastTimeState() const;
-    QString GetServerName() const;
-    QString GetTagName() const;
+    const QString& GetServerName() const;
+    const  QString& GetTagName() const;
+    const QString& GetHostname() const;
+    QString GetFullName() const;
     QString GetStringValue(bool use_substitute_values = true) const;
     QString GetStringType() const;
     int64_t GetIntValue() const;
@@ -49,7 +55,7 @@ public:
     bool ValueIsUnsignedInteger() const;
     bool ValueIsString() const;
     bool ValueIsBool() const;
-    QString GetCommentString() const;
+    const QString& GetCommentString() const;
     void SetCommentString(QString str);
     OpcValueType GetValue(bool use_substitute_values = true) const;
     void SetGainOption(double gain);
@@ -64,6 +70,7 @@ public:
     void ResetValueToWrite();
 
 private:
+    QString hostname_;
     QString server_name_;
     QString tag_name_;
     VARENUM type_ = VT_EMPTY;

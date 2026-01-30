@@ -1,10 +1,12 @@
 #include "opcdatamanager.h"
 
 using namespace OPC_HELPER;
+using namespace Qt::StringLiterals;
 
 OPCDataManager::OPCDataManager()
 {
-    RestoreDataFromFile(true /*json*/);
+    tag_name_check_re_.setPattern("^([^@]*)@([^@#].*)#(.*)$");
+    RestoreDataFromFile();
     QTimer::singleShot(50, this, [this](){emit sg_set_text_state("OPC клиент остановлен");});
 }
 
@@ -38,12 +40,12 @@ OPCDataManager::~OPCDataManager() {
     qInfo() << "OPCDataManager деструктор.";
 }
 
-TAG_STATUS OPCDataManager::CheckTagReadState(QString tag_name) const {
-    if(tag_names_.count(tag_name) == 0) {
+TAG_STATUS OPCDataManager::CheckTagReadState(const QString& full_tag_name) const {
+    if(tag_names_.count(full_tag_name) == 0) {
         return TAG_STATUS::NOT_FOUND;
     }
 
-    const QString* tag_ref = &(*tag_names_.find(tag_name));
+    const QString* tag_ref = &(*tag_names_.find(full_tag_name));
 
     size_t id = tag_name_to_id_.at(tag_ref);
 
@@ -58,12 +60,12 @@ TAG_STATUS OPCDataManager::CheckTagReadState(QString tag_name) const {
     }
 }
 
-size_t OPCDataManager::DeleteTagFromPeriodicRead(QString tag_name) {
-    if(tag_names_.count(tag_name) == 0) {
+size_t OPCDataManager::DeleteTagFromPeriodicRead(const QString& full_tag_name) {
+    if(tag_names_.count(full_tag_name) == 0) {
         return 0;
     }
 
-    const QString* tag_ref = &(*tag_names_.find(tag_name));
+    const QString* tag_ref = &(*tag_names_.find(full_tag_name));
     size_t id = tag_name_to_id_.at(tag_ref);
 
     if(opc_tags_id_value_controlled_.count(id) == 0) {
@@ -75,46 +77,80 @@ size_t OPCDataManager::DeleteTagFromPeriodicRead(QString tag_name) {
     return id;
 }
 
-size_t OPCDataManager::GetTagId(QString tag_name) const
+size_t OPCDataManager::GetTagId(const QString& full_tag_name) const
 {
-    if(tag_names_.count(tag_name)) {
-        auto it = tag_names_.find(tag_name);
+    if(tag_names_.count(full_tag_name)) {
+        auto it = tag_names_.find(full_tag_name);
         return tag_name_to_id_.at(&(*it));
     }
-    return -1;
+    return std::numeric_limits<size_t>::max();
 }
 
+size_t OPCDataManager::GetTagId(const QString& hostname, const QString& server_name, const QString& tag_name) const {
+    QString full_tag_name = QString("%1@%2#%3").arg(hostname, server_name, tag_name);
+    return GetTagId(full_tag_name);
+}
 
-size_t OPCDataManager::check_or_add_tag_(const QString& server_name, const QString& tag_name) {
-    const QString* server_name_ptr;
-    if(server_names_.count(server_name) == 0) {
-        server_name_ptr = &(*server_names_.insert(server_name).first);
+size_t OPCDataManager::check_or_add_tag_(const QString& full_tag_name) {
+
+    QRegularExpressionMatch match = tag_name_check_re_.match(full_tag_name);
+    if(match.hasMatch()) {
+        return check_or_add_tag_(match.captured(1), match.captured(2), match.captured(3));
     } else {
-        server_name_ptr = &(*server_names_.find(server_name));
+        QString error_matching(u"error"_s);
+        return check_or_add_tag_(error_matching, error_matching, error_matching);
     }
-    if(tag_names_.count(tag_name) == 0) {
-        auto [tag_ref, b] = tag_names_.insert(tag_name);
+}
+
+size_t OPCDataManager::check_or_add_tag_(const QString& hostname, const QString& server_name, const QString& tag_name) {
+    const QString* server_name_ptr;
+    const QString* hostname_ptr;
+
+    if(hostnames_.count(hostname) == 0) {
+        hostname_ptr = &(*hostnames_.insert(hostname).first);
+        host_to_opc_servers_[hostname_ptr] = {};
+    } else {
+        hostname_ptr = &(*hostnames_.find(hostname));
+    }
+
+    if(host_to_opc_servers_.at(hostname_ptr).count(server_name) == 0) {
+        server_name_ptr = &(*host_to_opc_servers_.at(hostname_ptr).insert(server_name).first);
+        opc_server_to_host_[server_name_ptr] = hostname_ptr;
+    } else {
+        server_name_ptr = &(*host_to_opc_servers_.at(hostname_ptr).find(server_name));
+    }
+
+    QString tag_full_name = QString("%1@%2#%3").arg(hostname, server_name, tag_name);
+    if(tag_names_.count(tag_full_name) == 0) {
+        auto [tag_ref, _] = tag_names_.insert(tag_full_name);
         tag_name_to_id_[&(*tag_ref)] = ++last_id_;
         opc_server_name_to_id_tags_set_[server_name_ptr].insert(last_id_);
         opc_tag_to_server_name_[last_id_] = server_name_ptr;
-        id_tag_to_OPCTag_pointer_[last_id_] = std::make_shared<OPCTag>(server_name, tag_name);
+        id_tag_to_OPCTag_pointer_[last_id_] = std::make_shared<OPCTag>(hostname, server_name, tag_name);
         return last_id_;
     } else {
         const QString* tag_ref = &(*tag_names_.find(tag_name));
         size_t id = tag_name_to_id_.at(tag_ref);
-        if(opc_tag_to_server_name_.at(id) != server_name_ptr) {
-            const QString* last_sn = opc_tag_to_server_name_.at(id);
-            opc_server_name_to_id_tags_set_[last_sn].erase(id);
-            opc_tag_to_server_name_[id] = server_name_ptr;
-            opc_server_name_to_id_tags_set_[server_name_ptr].insert(id);
-        }
         return id;
     }
 }
 
 
-size_t OPCDataManager::AddTagToPeriodicReadList(QString server_name, QString tag_name) {
-    size_t id = check_or_add_tag_(server_name, tag_name);
+size_t OPCDataManager::AddTagToPeriodicReadList(const QString& hostname, const QString& server_name, const QString& tag_name) {
+    size_t id = check_or_add_tag_(hostname, server_name, tag_name);
+    opc_tags_id_value_controlled_.insert(id);
+    emit sg_periodic_list_changed();
+    return id;
+}
+
+size_t OPCDataManager::AddTagToPeriodicReadList(const QString& full_tag_name) {
+    QRegularExpressionMatch match = tag_name_check_re_.match(full_tag_name);
+    size_t id;
+    if(match.hasMatch()) {
+        id = check_or_add_tag_(match.captured(1), match.captured(2), match.captured(3));
+    } else {
+        id = std::numeric_limits<size_t>::max();
+    }
     opc_tags_id_value_controlled_.insert(id);
     emit sg_periodic_list_changed();
     return id;
@@ -129,6 +165,16 @@ std::vector<std::shared_ptr<OPCTag>> OPCDataManager::GetPeriodicTags() const {
     std::vector<std::shared_ptr<OPCTag>> ret_vec;
     for(const auto& it: opc_tags_id_value_controlled_) {
         ret_vec.push_back(id_tag_to_OPCTag_pointer_.at(it));
+    }
+    return ret_vec;
+}
+
+std::vector<std::shared_ptr<OPCTag>> OPCDataManager::GetPeriodicTags(const QString& hostname) const {
+    std::vector<std::shared_ptr<OPCTag>> ret_vec;
+    for(const auto& it: opc_tags_id_value_controlled_) {
+        if(id_tag_to_OPCTag_pointer_.at(it)->GetHostname() == hostname) {
+            ret_vec.push_back(id_tag_to_OPCTag_pointer_.at(it));
+        }
     }
     return ret_vec;
 }
@@ -148,6 +194,11 @@ std::shared_ptr<OPCTag> OPCDataManager::GetOPCTag(size_t id) const {
     return nullptr;
 }
 
+const std::set<QString> &OPCDataManager::GetHostNames() const
+{
+    return hostnames_;
+}
+
 bool OPCDataManager::SaveDataToFile() {
     QString path = qApp->applicationDirPath();
     return SaveDataToFile(path);
@@ -158,17 +209,18 @@ bool OPCDataManager::SaveDataToFile(const QString& foldername) {
     QFile file(filename);
     if(file.open(QIODeviceBase::WriteOnly)) {
         QJsonArray json_ar;
-        for(const auto& [name, id]: tag_name_to_id_) {
+        for(const auto& [id, tag_ptr]: id_tag_to_OPCTag_pointer_) {
             QJsonObject t_obj;
-            t_obj.insert("tag_name", *name);
-            t_obj.insert("tag_comment", id_tag_to_OPCTag_pointer_.at(id)->GetCommentString());
+            t_obj.insert("tag_name", tag_ptr->GetTagName());
+            t_obj.insert("tag_comment", tag_ptr->GetCommentString());
             t_obj.insert("id", static_cast<int64_t>(id));
-            t_obj.insert("server", *opc_tag_to_server_name_.at(id));
+            t_obj.insert("server", tag_ptr->GetServerName());
+            t_obj.insert("hostname", tag_ptr->GetHostname());
             t_obj.insert("periodic", opc_tags_id_value_controlled_.count(id) != 0);
-            if(id_tag_to_OPCTag_pointer_.at(id)->GetGainOption().has_value()) {
-                t_obj.insert("gain", id_tag_to_OPCTag_pointer_.at(id)->GetGainOption().value());
+            if(tag_ptr->GetGainOption().has_value()) {
+                t_obj.insert("gain", tag_ptr->GetGainOption().value());
             }
-            auto subst_map = id_tag_to_OPCTag_pointer_.at(id)->GetEnumStringValues();
+            auto subst_map = tag_ptr->GetEnumStringValues();
             if(subst_map.size() > 0) {
                 QJsonArray subst_array;
                 for(const auto& [val, substitute_val]: subst_map) {
@@ -190,14 +242,10 @@ bool OPCDataManager::SaveDataToFile(const QString& foldername) {
 }
 
 
-bool OPCDataManager::RestoreDataFromFile(bool json) {
-    if(json) {
-        emit sg_send_message_to_console("OPCDataManager: чтение данных из файла opctags.json.");
-        return restore_data_from_json_();
-    } else {
-        emit sg_send_message_to_console("OPCDataManager: чтение данных из файла opctags.dat.");
-        return restore_data_from_dat_();
-    }
+bool OPCDataManager::RestoreDataFromFile() {
+
+    emit sg_send_message_to_console("OPCDataManager: чтение данных из файла opctags.json.");
+    return restore_data_from_json_();
 }
 
 bool OPCDataManager::PeriodicReadingOn() const
@@ -261,59 +309,11 @@ void OPCDataManager::StopPeriodReading()
     emit sg_stop_periodic_reading();
 }
 
-bool OPCDataManager::restore_data_from_dat_() {
-    QFile file("opctags.dat");
-    if(file.open(QIODeviceBase::ReadOnly)) {
-        QDataStream in(&file);
-        QString header;
-        size_t tags_number;
-        int period;
-        bool was_running;
-        in >> header;
-        in >> period;
-        in >> was_running;
-        in >> tags_number;
-        for(size_t i = 0; i < tags_number; ++i) {
-            QString tag_name;
-            QString server_name;
-            QString comment;
-            bool read_on_request;
-            bool read_periodically;
-            size_t id;
-            in >> id;
-            in >> tag_name;
-            in >> comment;
-            in >> server_name;
-            in >> read_on_request;
-            in >> read_periodically;
-            auto [tag_ref, b] = tag_names_.insert(tag_name);
-            auto [server_ref, b2] = server_names_.insert(server_name);
-            tag_name_to_id_[&(*tag_ref)] = id;
-            id_tag_to_name_tag_[id] = &(*tag_ref);
-            opc_server_name_to_id_tags_set_[&(*server_ref)].insert(id);
-            opc_tag_to_server_name_[id] = &(*server_ref);
-            id_tag_to_OPCTag_pointer_[id] = std::make_shared<OPCTag>(server_name, tag_name);
-            id_tag_to_OPCTag_pointer_.at(id)->SetCommentString(comment);
-
-            if(read_periodically) {
-                opc_tags_id_value_controlled_.insert(id);
-            }
-
-            last_id_ = id > last_id_ ? id : last_id_;
-        }
-
-        std::vector<std::shared_ptr<OPCTag>> periodic_tags;
-        for(const auto & it: opc_tags_id_value_controlled_) {
-            periodic_tags.push_back(id_tag_to_OPCTag_pointer_.at(it));
-        }
-        return in.status() == 0;
-    }
-    return false;
-}
-
 bool OPCDataManager::OPCDataManager::restore_data_from_json_() {
     tag_names_.clear();
-    server_names_.clear();
+    hostnames_.clear();
+    host_to_opc_servers_.clear();
+    opc_server_to_host_.clear();
     tag_name_to_id_.clear();
     id_tag_to_name_tag_.clear();
     opc_server_name_to_id_tags_set_.clear();
@@ -342,15 +342,23 @@ bool OPCDataManager::OPCDataManager::restore_data_from_json_() {
                     && (item_obj.contains("periodic") && item_obj.value("periodic").isBool())
                     && (item_obj.contains("id") && item_obj.value("id").isDouble())) {
 
-                    auto [tag_ref, b] = tag_names_.insert(item_obj.value("tag_name").toString());
-                    auto [server_ref, b2] = server_names_.insert(item_obj.value("server").toString());
+                    QString hostname = item_obj.contains("hostname") ? item_obj.value("hostname").toString() : u"localhost"_s;
+                    auto host_ref = hostnames_.insert(hostname).first;
+                    auto server_ref = host_to_opc_servers_[&(*host_ref)].insert(item_obj.value("server").toString()).first;
+                    opc_server_to_host_[&(*server_ref)] = &(*host_ref);
+
+                    QString full_tag_name = QString("%1@%2#%3").arg(*host_ref, *server_ref, item_obj.value("tag_name").toString());
+                    auto tag_ref = tag_names_.insert(full_tag_name).first;
+
                     size_t id = static_cast<size_t>(item_obj.value("id").toInteger());
                     tag_name_to_id_[&(*tag_ref)] = id;
                     id_tag_to_name_tag_[id] = &(*tag_ref);
                     opc_server_name_to_id_tags_set_[&(*server_ref)].insert(id);
                     opc_tag_to_server_name_[id] = &(*server_ref);
-                    id_tag_to_OPCTag_pointer_[id] = std::make_shared<OPCTag>(item_obj.value("server").toString(), item_obj.value("tag_name").toString());
-                    id_tag_to_OPCTag_pointer_.at(id)->SetCommentString(item_obj.value("tag_comment").toString());
+                    id_tag_to_OPCTag_pointer_[id] = std::make_shared<OPCTag>(full_tag_name);
+
+                    QString comment = item_obj.value("tag_comment").toString().length() > 0 ? item_obj.value("tag_comment").toString() : QString("%1@%2").arg(*host_ref, *server_ref);
+                    id_tag_to_OPCTag_pointer_.at(id)->SetCommentString(comment);
 
                     if(item_obj.value("periodic").toBool()) {
                         opc_tags_id_value_controlled_.insert(id);
@@ -372,7 +380,9 @@ bool OPCDataManager::OPCDataManager::restore_data_from_json_() {
 
                 } else {
                     tag_names_.clear();
-                    server_names_.clear();
+                    hostnames_.clear();
+                    host_to_opc_servers_.clear();
+                    opc_server_to_host_.clear();
                     tag_name_to_id_.clear();
                     id_tag_to_name_tag_.clear();
                     opc_server_name_to_id_tags_set_.clear();
@@ -411,7 +421,7 @@ void OPCDataManager::start_period_reading_()
     QObject::connect(opc_client_per, SIGNAL(sg_send_message_to_console(QString)), this, SIGNAL(sg_send_message_to_console(QString)));
     QObject::connect(opc_client_per, SIGNAL(sg_opcclient_got_exception(QString)), this, SIGNAL(sg_send_message_to_console(QString)));
     QObject::connect(opc_client_per, SIGNAL(sg_opcclient_got_exception(QString)), this, SLOT(sl_thread_send_exception(QString)));
-    QObject::connect(opc_client_per, SIGNAL(sg_server_error(QString,OPCSERVERSTATE)), this, SLOT(sl_thread_send_opc_status(QString,OPCSERVERSTATE)));
+    QObject::connect(opc_client_per, SIGNAL(sg_server_error(QString,QString,OPCSERVERSTATE)), this, SLOT(sl_thread_send_opc_status(QString,QString,OPCSERVERSTATE)));
     QObject::connect(opc_thread_per, SIGNAL(started()), this, SLOT(sl_thread_periodic_started()));
     QObject::connect(opc_thread_per, SIGNAL(started()), opc_client_per, SLOT(sl_process()));
     QObject::connect(opc_client_per, SIGNAL(sg_finished()), opc_thread_per, SLOT(quit()));
@@ -493,7 +503,7 @@ void OPCDataManager::sl_thread_send_exception(QString text)
     emit sg_set_text_state("OPC клиент перезапуск");
 }
 
-void OPCDataManager::sl_thread_send_opc_status(QString server, OPCSERVERSTATE state)
+void OPCDataManager::sl_thread_send_opc_status(QString host, QString server, OPCSERVERSTATE state)
 {
     QString ser_state;
     switch(state) {
@@ -506,7 +516,7 @@ void OPCDataManager::sl_thread_send_opc_status(QString server, OPCSERVERSTATE st
     default: ser_state = "UNKNOWN"; break;
     }
 
-    QString log_message = QString("OPCDataManager: сервер %1 получено состояние %2").arg(server, ser_state);
+    QString log_message = QString("OPCDataManager: сервер %1@%2 получено состояние %3").arg(host, server, ser_state);
     emit sg_send_message_to_console(log_message);
     qWarning() << log_message;
 

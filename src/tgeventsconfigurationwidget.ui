@@ -32,12 +32,15 @@
    <item>
     <widget class="QStackedWidget" name="swEventsData">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="pgScheduleEvent">
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <widget class="QGroupBox" name="groupBox_12">
+         <property name="whatsThis">
+          <string>styledGB</string>
+         </property>
          <property name="title">
           <string>ID события</string>
          </property>
@@ -50,8 +53,14 @@
        </item>
        <item>
         <widget class="QGroupBox" name="groupBox_21">
+         <property name="whatsThis">
+          <string>styledGB</string>
+         </property>
          <property name="title">
           <string>Условия</string>
+         </property>
+         <property name="flat">
+          <bool>false</bool>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_36">
           <item>
@@ -448,6 +457,9 @@
        </item>
        <item>
         <widget class="QGroupBox" name="gbScheduledEventsActions">
+         <property name="whatsThis">
+          <string>styledGB</string>
+         </property>
          <property name="title">
           <string>Действия</string>
          </property>
@@ -460,6 +472,9 @@
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
         <widget class="QGroupBox" name="groupBox_9">
+         <property name="whatsThis">
+          <string>styledGB</string>
+         </property>
          <property name="title">
           <string>ID события</string>
          </property>
@@ -472,6 +487,9 @@
        </item>
        <item>
         <widget class="QGroupBox" name="groupBox_10">
+         <property name="whatsThis">
+          <string>styledGB</string>
+         </property>
          <property name="title">
           <string>Переменная</string>
          </property>
@@ -484,6 +502,9 @@
        </item>
        <item>
         <widget class="QGroupBox" name="groupBox_11">
+         <property name="whatsThis">
+          <string>styledGB</string>
+         </property>
          <property name="title">
           <string>Условия</string>
          </property>
@@ -683,6 +704,9 @@
        </item>
        <item>
         <widget class="QGroupBox" name="gbEventsActions">
+         <property name="whatsThis">
+          <string>styledGB</string>
+         </property>
          <property name="title">
           <string>Действия</string>
          </property>

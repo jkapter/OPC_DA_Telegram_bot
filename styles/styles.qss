@@ -1,3 +1,11 @@
+* {
+    font-size: 11pt;
+}
+
+QPlainTextEdit {
+    font-size: 9pt;
+}
+
 QTableWidget {
     background-color: white;
     gridline-color: #519999;
@@ -105,31 +113,34 @@ QTabWidget {
 
 QTabWidget::pane {
     border: 1px solid #C2C7CB;
+    background: white;
 }
 
 QTabWidget::tab-bar {
     left: 5px;
-    height: 30px;
+    height: 40px;
 }
 
 QTabBar::tab {
     background: #F5F5F5;
-    border: 1px solid black;
-    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;
-    min-width: 20ex;
-    min-height: 20px;
-    padding-left: 3ex;
-    padding-right: 3ex;
+    border: 1px solid #C2C7CB;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    min-width: 20px;
+    min-height: 30px;
+    padding-left: 20px;
+    padding-right: 20px;
 }
 
 QTabBar::tab:selected {
     background-color: white;
-    border-bottom-style: none;
+    margin-bottom: -1px;
+    border-bottom: 0px white;
 }
 
 QTabBar::tab:!selected {
     margin-top: 2px; /* make non-selected tabs look smaller */
+    border-bottom: 1px #C2C7CB;
 }
 
 QFrame, QStackedWidget {
@@ -172,16 +183,18 @@ QGroupBox {
     border-radius: 6px;
     border: 1px solid rgb(142, 213, 206);
     background-color: white;
-    margin-top: 3ex;
-    margin-bottom: 3ex;
-    padding: 3ex;
+    margin-top: 1.5ex;
+    font-size: 9;
+    font-weight: bold;
 }
 
 QGroupBox::title {
     subcontrol-origin: margin;
-    left: 3ex;
-    padding-left: 2ex;
-    padding-right: 2ex;
+    subcontrol-position: top left;
+    left: 2ex;
+    padding-left: 2px;
+    padding-right: 2px;
+    padding-bottom: 0px;
 }
 
 QTableWidget QComboBox {

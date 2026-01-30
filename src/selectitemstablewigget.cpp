@@ -80,7 +80,7 @@ void SelectItemsTableWidget::ReadCommandContent(const TGTrigger* command)
         QComboBox* cb_mes = qobject_cast<QComboBox*>(cellWidget(row_index, 1));
         if(!cb_com || !cb_mes || !bot_manager_.GetTGParent()->OPCManager()) return;
         cb_com->setCurrentIndex(2);
-        cb_mes->setCurrentText(QString("%1: %2").arg(bot_manager_.GetTGParent()->OPCManager()->GetTagId(tag->GetTagName())).arg(tag->GetTagName()));
+        cb_mes->setCurrentText(QString("%1: %2").arg(bot_manager_.GetTGParent()->OPCManager()->GetTagId(tag->GetFullName())).arg(tag->GetTagName()));
         item(row_index, 2)->setText(OPC_HELPER::toString(val));
         item(row_index, 2)->setTextAlignment(Qt::AlignCenter);
         item(row_index, 2)->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled);
@@ -256,7 +256,7 @@ void SelectItemsTableWidget::update_content_messages_()
             auto tags = bot_manager_.GetTGParent()->OPCManager()->GetPeriodicTags();
 
             for(size_t j = 0; j < tags.size(); ++j) {
-                tags_id_to_names[bot_manager_.GetTGParent()->OPCManager()->GetTagId(tags.at(j)->GetTagName())] = tags.at(j)->GetTagName();
+                tags_id_to_names[bot_manager_.GetTGParent()->OPCManager()->GetTagId(tags.at(j)->GetFullName())] = tags.at(j)->GetTagName();
             }
 
             for(auto it = tags_id_to_names.begin(); it != tags_id_to_names.end(); ++it) {

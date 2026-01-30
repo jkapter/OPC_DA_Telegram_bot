@@ -119,6 +119,11 @@
           <height>40</height>
          </size>
         </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>  ПРОЧИТАТЬ</string>
         </property>
@@ -247,6 +252,11 @@
       </property>
       <item>
        <widget class="QLabel" name="label">
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>Тэги для чтения</string>
         </property>

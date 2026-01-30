@@ -40,6 +40,9 @@
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <widget class="QGroupBox" name="groupBox_6">
+        <property name="whatsThis">
+         <string>styledGB</string>
+        </property>
         <property name="title">
          <string>ID команды</string>
         </property>
@@ -55,6 +58,9 @@
       </item>
       <item>
        <widget class="QGroupBox" name="groupBox_8">
+        <property name="whatsThis">
+         <string>styledGB</string>
+        </property>
         <property name="title">
          <string>Команда (латиница)</string>
         </property>
@@ -98,6 +104,9 @@
       </item>
       <item>
        <widget class="QGroupBox" name="gbCommandsActions">
+        <property name="whatsThis">
+         <string>styledGB</string>
+        </property>
         <property name="title">
          <string>Действия</string>
         </property>

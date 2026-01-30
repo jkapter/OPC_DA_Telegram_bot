@@ -103,7 +103,7 @@ void TgBotConfigurationWidget::sl_add_new_message()
     std::unique_ptr<TGMessage> new_message_ptr = std::unique_ptr<TGMessage>(new TGMessage(tg_bot_manager_->GetTGParent()));
     const std::string& new_id = new_message_ptr->GetId();
     tg_bot_manager_->AddTGMessage(std::move(new_message_ptr));
-    message_widget_->sl_change_object_data(new_id, {});
+
     messages_tree_->sl_tgobject_changed(new_id, {});
 }
 
@@ -142,7 +142,7 @@ void TgBotConfigurationWidget::sl_add_new_command()
     std::unique_ptr<TGTriggerUserCommand> new_command_ptr = std::unique_ptr<TGTriggerUserCommand>(new TGTriggerUserCommand(tg_bot_manager_->GetTGParent()));
     const std::string& new_id = new_command_ptr->GetId();
     tg_bot_manager_->AddTGCommand(std::move(new_command_ptr));
-    command_widget_->sl_change_object_data(new_id, {});
+
     commands_tree_->sl_tgobject_changed(new_id, {});
 }
 
@@ -193,7 +193,7 @@ void TgBotConfigurationWidget::sl_add_new_event()
     std::unique_ptr<TGTriggerTagValue> new_event_ptr = std::unique_ptr<TGTriggerTagValue>(new TGTriggerTagValue(tg_bot_manager_->GetTGParent()));
     const std::string& new_id = new_event_ptr->GetId();
     tg_bot_manager_->AddTGEvent(std::move(new_event_ptr));
-    events_widget_->sl_change_object_data(new_id, {});
+
     events_tree_->sl_tgobject_changed(new_id, {});
 }
 
@@ -238,7 +238,7 @@ void TgBotConfigurationWidget::sl_add_new_inline_button()
     std::unique_ptr<TGButtonWCallback> new_button_ptr = std::unique_ptr<TGButtonWCallback>(new TGButtonWCallback(tg_bot_manager_->GetTGParent()));
     const std::string& new_id = new_button_ptr->GetId();
     tg_bot_manager_->AddTGInlineButton(std::move(new_button_ptr));
-    button_widget_->sl_change_object_data(new_id, {});
+
     buttons_tree_->sl_tgobject_changed(new_id, {});
 }
 
@@ -276,10 +276,9 @@ void TgBotConfigurationWidget::sl_add_new_scheduled_event()
     std::unique_ptr<TGScheduledEvent> new_event_ptr = std::unique_ptr<TGScheduledEvent>(new TGScheduledEvent(tg_bot_manager_->GetTGParent(), PeriodicalTask::Period::HOURLY));
     const std::string& new_id = new_event_ptr->GetId();
     tg_bot_manager_->AddTGScheduledEvent(std::move(new_event_ptr));
-    events_widget_->sl_change_object_data(new_id, {});
+
     events_tree_->sl_tgobject_changed(new_id, {});
 }
-
 
 //=================================================================================
 //============ T G T R E E I T E M ================================================
@@ -717,7 +716,7 @@ QVariant TGObjectTreeModel::data(const QModelIndex &index, int role) const
         return item->Data();
     }
     if(role == Qt::FontRole) {
-        QFont font("Segoe UI", 10);
+        QFont font("Segoe UI", 11);
         if(!index.parent().isValid())
             font.setBold(true);
 

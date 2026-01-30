@@ -28,6 +28,7 @@ void TGMessageConfigurationWidget::sl_change_object_data(const std::string &curr
         current_message_ = tg_bot_manager_.GetTGMessage(previous);
         save_to_current_message_();
     }
+
     load_data_from_message_(current);
 }
 

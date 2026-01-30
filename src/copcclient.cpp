@@ -15,11 +15,12 @@ __CRT_UUID_DECL(IOPCItemMgt, 0x39c13a54, 0x011e, 0x11d0, 0x96, 0x75, 0x00, 0x20,
 __CRT_UUID_DECL(IOPCSyncIO, 0x39c13a52, 0x011e, 0x11d0, 0x96, 0x75, 0x00, 0x20, 0xaf, 0xd8, 0xad, 0xb3)
 
 using namespace OPC_HELPER;
+using namespace Qt::StringLiterals;
 
-COPCClient::COPCClient() {
+COPCClient::COPCClient(): QObject()
+{
     qInfo() << QString("Новый экземпляр ОРС клиента, поток [%1]").arg(QThread::currentThread()->objectName());
     CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-    get_registered_servers_();
 }
 
 COPCClient::~COPCClient() {
@@ -30,12 +31,14 @@ COPCClient::~COPCClient() {
 }
 
 void COPCClient::clear_internal_data_() {
-    for(const auto& [name, guid_ptr]: opc_server_name_to_guid_) {
-        disconnect_server_(name);
+    for(auto& guid_ptr: guid_servers_) {
+        disconnect_server_(&guid_ptr);
     }
+
+    host_to_opc_names_.clear();
+    opc_server_to_guid_.clear();
     guid_servers_.clear();
     opc_server_guid_to_data_.clear();
-    opc_server_name_to_guid_.clear();
     opc_server_guid_to_tag_names_.clear();
     opc_server_guid_to_IOPCSErver_.clear();
     opc_server_guid_to_group_.clear();
@@ -43,11 +46,20 @@ void COPCClient::clear_internal_data_() {
 
 void COPCClient::RefreshOPCServersList() {
     clear_internal_data_();
-    get_registered_servers_();
+    for(const auto& host: hostnames_) {
+        get_registered_servers_(host);
+    }
 }
 
-int COPCClient::get_registered_servers_()
+int COPCClient::get_registered_servers_(const QString& hostname)
 {
+    auto host_it = hostnames_.insert(hostname).first;
+    if(host_to_opc_names_.contains(&(*host_it))) {
+        host_to_opc_names_.at(&(*host_it)).clear();
+    } else {
+        host_to_opc_names_[&(*host_it)] = {};
+    }
+
     CLSID clsid;
     CLSID clsidcat;
     HRESULT hRes;
@@ -57,7 +69,24 @@ int COPCClient::get_registered_servers_()
 
     IID IID_IOPCServerList = __uuidof(IOPCServerList);
     IOPCServerList2* pServerList = NULL;
-    hRes = CoCreateInstance(clsid, NULL, CLSCTX_LOCAL_SERVER, IID_IOPCServerList, (void**)&pServerList);
+
+    if(hostname == u"localhost"_s) {
+        hRes = CoCreateInstance(clsid, NULL, CLSCTX_LOCAL_SERVER, IID_IOPCServerList, (void**)&pServerList);
+    } else {
+        COSERVERINFO ServerInfo = {0};
+
+        std::wstring wstr_hostname = hostname.toStdWString();
+        ServerInfo.pwszName = wstr_hostname.data();
+        ServerInfo.pAuthInfo = NULL;
+
+        MULTI_QI MultiQI [2] = {0};
+        MultiQI [0].pIID = &IID_IOPCServerList;
+        MultiQI [0].pItf = NULL;
+        MultiQI [0].hr = S_OK;
+
+        hRes = CoCreateInstanceEx(clsid, NULL, CLSCTX_REMOTE_SERVER, &ServerInfo, 1, MultiQI);
+        pServerList = static_cast<IOPCServerList2*>(MultiQI[0].pItf);
+    }
 
     if(hRes != S_OK) {
         QString log_message = QString("ОРС-клиент поток [%1]: ошибка запроса списка серверов. hRes = %2 : %3")
@@ -92,19 +121,19 @@ int COPCClient::get_registered_servers_()
 
         emit sg_send_message_to_console(log_message);
         qWarning() << log_message;
-
-        pServerList->Release();
-
-        if(pIEnumGuid) {
-            pServerList->Release();
-        }
-        return -1;
     }
 
-    if(!pIEnumGuid) {
+    if(!pIEnumGuid || hRes != S_OK) {
         QString log_message = QString("ОРС-клиент поток [%1]: список GUID серверов пуст.").arg(QThread::currentThread()->objectName());
         emit sg_send_message_to_console(log_message);
         qWarning() << log_message;
+
+        if(pServerList) {
+            pServerList->Release();
+        }
+        if(pIEnumGuid) {
+            pIEnumGuid->Release();
+        }
         return -1;
     }
 
@@ -121,11 +150,17 @@ int COPCClient::get_registered_servers_()
     {
         nServerCnt++;
         pServerList->GetClassDetails(guid, &pszProgID, &pszUserType,  &pszVerIndProgID);
+
+        auto host_it = hostnames_.find(hostname);
+        auto [server_it, b]  = host_to_opc_names_.at(&(*host_it)).insert(QString::fromWCharArray(pszProgID));
+        if(!b) continue;
+
         guid_servers_.push_back(guid);
-        opc_server_guid_to_data_[&guid_servers_.back()] = {QString::fromWCharArray(pszProgID), QString::fromWCharArray(pszUserType)};
-        opc_server_name_to_guid_[QString::fromWCharArray(pszProgID)] = &guid_servers_.back();
+        opc_server_to_guid_[&(*server_it)] = &guid_servers_.back();
+        opc_server_guid_to_data_[&guid_servers_.back()] = {QString::fromWCharArray(pszProgID), QString::fromWCharArray(pszUserType), hostname};
         opc_server_guid_to_IOPCSErver_[&guid_servers_.back()] = NULL;
         opc_server_guid_to_group_[&guid_servers_.back()] = {};
+        opc_server_guid_to_tag_names_[&guid_servers_.back()] = {};
         pIEnumGuid->Next(1, &guid, &iRetSvr);
     }
 
@@ -134,18 +169,18 @@ int COPCClient::get_registered_servers_()
     return nServerCnt;
 }
 
-bool COPCClient::connect_and_browse_server_(const QString& server_name, std::vector<QString>& tags_names) {
-    if(!connect_server_(server_name)) return false;
+bool COPCClient::browse_server_address_space_(const GUID* guid_ptr, int notify_of_portion) {
+    if(!guid_ptr || !opc_server_guid_to_IOPCSErver_.at(guid_ptr)) return false;
 
     //Подключение установлено
     IID IID_IOPCBrowseServerAddressSpace = __uuidof(IOPCBrowseServerAddressSpace);
     IOPCBrowseServerAddressSpace* pBrowse = NULL;
 
-    HRESULT hRes = opc_server_guid_to_IOPCSErver_.at(opc_server_name_to_guid_.at(server_name))->QueryInterface(IID_IOPCBrowseServerAddressSpace, (void**)&pBrowse);
+    HRESULT hRes = opc_server_guid_to_IOPCSErver_.at(guid_ptr)->QueryInterface(IID_IOPCBrowseServerAddressSpace, (void**)&pBrowse);
 
     if (hRes != S_OK) {
-        QString log_message = QString("ОРС-клиент поток [%1]: ошибка подключения к серверу. hRes = %2 : %3")
-                                  .arg(QThread::currentThread()->objectName())
+        QString log_message = QString("ОРС-клиент поток [%1]: ошибка подключения к серверу %2@%3. hRes = %4 : %5")
+                                  .arg(QThread::currentThread()->objectName(), opc_server_guid_to_data_.at(guid_ptr).ProgID, opc_server_guid_to_data_.at(guid_ptr).Hostname)
                                   .arg(static_cast<unsigned long>(hRes), 10, 16)
                                   .arg(GetErrorStringFromHRESULT(hRes));
 
@@ -158,19 +193,19 @@ bool COPCClient::connect_and_browse_server_(const QString& server_name, std::vec
         return false;
     }
 
-    tags_names.clear();
+    opc_server_guid_to_tag_names_.at(guid_ptr).clear();
     // отображаем содержимое сервера, начиная с корневого узла
-    export_server_address_space_(pBrowse, tags_names);
+    export_server_address_space_(pBrowse, guid_ptr, notify_of_portion);
     pBrowse->Release();
 
-    disconnect_server_(server_name);
+    disconnect_server_(guid_ptr);
 
     return true;
 }
 
-void COPCClient::export_server_address_space_(IOPCBrowseServerAddressSpace* pParent, std::vector<QString>& tags_names)
+void COPCClient::export_server_address_space_(IOPCBrowseServerAddressSpace* pParent, const GUID* guid_ptr, int notify_of_portion)
 {
-    if(!pParent) return;
+    if(!pParent || !guid_ptr) return;
 
     IEnumString* pEnum = NULL;
     wchar_t* strName = NULL;
@@ -181,8 +216,8 @@ void COPCClient::export_server_address_space_(IOPCBrowseServerAddressSpace* pPar
     HRESULT hRes = pParent->BrowseOPCItemIDs(OPC_LEAF, L"", VT_EMPTY, 0, &pEnum);
 
     if(!pEnum) {
-        QString log_message = QString("ОРС-клиент поток [%1]: ошибка экспорта адресного пространства сервера OPC_LEAF. hRes = %2 : %3")
-                                  .arg(QThread::currentThread()->objectName())
+        QString log_message = QString("ОРС-клиент поток [%1]: ошибка экспорта адресного пространства сервера %2@%3 OPC_LEAF. hRes = %4 : %5")
+                                  .arg(QThread::currentThread()->objectName(), opc_server_guid_to_data_.at(guid_ptr).ProgID, opc_server_guid_to_data_.at(guid_ptr).Hostname)
                                   .arg(static_cast<unsigned long>(hRes), 10, 16)
                                   .arg(GetErrorStringFromHRESULT(hRes));
 
@@ -196,8 +231,15 @@ void COPCClient::export_server_address_space_(IOPCBrowseServerAddressSpace* pPar
 
     while (cnt!=0) {
         pParent->GetItemID(strName, &lpItemID);//получает полный идентификатор тега
-        tags_names.push_back(QString::fromWCharArray(lpItemID));
+        opc_server_guid_to_tag_names_.at(guid_ptr).push_back(QString::fromWCharArray(lpItemID));
         pEnum->Next(1, &strName, &cnt);
+        if(notify_of_portion > 0 && (opc_server_guid_to_tag_names_.at(guid_ptr).size() % notify_of_portion) == 0) {
+            emit sg_get_part_tag_names_from_server(opc_server_guid_to_data_.at(guid_ptr).Hostname, opc_server_guid_to_data_.at(guid_ptr).ProgID, opc_server_guid_to_tag_names_.at(guid_ptr).size());
+            QThread::currentThread()->eventDispatcher()->processEvents(QEventLoop::AllEvents);
+        }
+        if(QThread::currentThread()->isInterruptionRequested()) {
+            break;
+        }
     }
     pEnum->Release();
     pEnum = NULL;
@@ -205,8 +247,8 @@ void COPCClient::export_server_address_space_(IOPCBrowseServerAddressSpace* pPar
     pParent->BrowseOPCItemIDs(OPC_BRANCH, L"", VT_EMPTY, 0, &pEnum);
 
     if(!pEnum) {
-        QString log_message = QString("ОРС-клиент поток [%1]: ошибка экспорта адресного пространства сервера OPC_BRANCH. hRes = %2 : %3")
-                                  .arg(QThread::currentThread()->objectName())
+        QString log_message = QString("ОРС-клиент поток [%1]: ошибка экспорта адресного пространства сервера %2@%3 OPC_BRANCH. hRes = %4 : %5")
+                                  .arg(QThread::currentThread()->objectName(), opc_server_guid_to_data_.at(guid_ptr).ProgID, opc_server_guid_to_data_.at(guid_ptr).Hostname)
                                   .arg(static_cast<unsigned long>(hRes), 10, 16)
                                   .arg(GetErrorStringFromHRESULT(hRes));
 
@@ -220,55 +262,64 @@ void COPCClient::export_server_address_space_(IOPCBrowseServerAddressSpace* pPar
     while (cnt != 0) {
         hRes = pParent->ChangeBrowsePosition(OPC_BROWSE_DOWN,strName);
         if (S_OK == hRes) {
-            export_server_address_space_(pParent, tags_names);
+            export_server_address_space_(pParent, guid_ptr, notify_of_portion);
             pParent->ChangeBrowsePosition(OPC_BROWSE_UP, strName);
             pEnum->Next(1, &strName, &cnt);
         } else {
             cnt = 0;
         }
+        if(QThread::currentThread()->isInterruptionRequested()) {
+            break;
+        }
     }
     pEnum->Release();
 }
 
-bool COPCClient::connect_server_(const QString& server_name) {
-    if(opc_server_name_to_guid_.count(server_name) == 0) {
-        QString log_message = QString("ОРС-клиент поток [%1]: не найден GUID сервера \"%2\" в списке.")
-                                  .arg(QThread::currentThread()->objectName(), server_name);
+bool COPCClient::connect_server_(const GUID* guid_ptr) {
 
-        emit sg_send_message_to_console(log_message);
-        qWarning() << log_message;
-
-        return false;
-    }
-
-    if (opc_server_guid_to_IOPCSErver_.at(opc_server_name_to_guid_.at(server_name)) != NULL) {
+    if (opc_server_guid_to_IOPCSErver_.at(guid_ptr) != NULL) {
         return true;
     }
 
     HRESULT hRes;
     IID IID_IOPCSERVER = __uuidof(IOPCServer);
-    GUID* guid_ptr = opc_server_name_to_guid_.at(server_name);
 
-    hRes = CoCreateInstance(*guid_ptr, NULL, CLSCTX_LOCAL_SERVER, IID_IOPCSERVER, (void**)&opc_server_guid_to_IOPCSErver_.at(opc_server_name_to_guid_.at(server_name)));
+    if(opc_server_guid_to_data_.at(guid_ptr).Hostname == u"localhost"_s) {
+        hRes = CoCreateInstance(*guid_ptr, NULL, CLSCTX_LOCAL_SERVER, IID_IOPCSERVER, (void**)&opc_server_guid_to_IOPCSErver_.at(guid_ptr));
+    } else {
+        COSERVERINFO ServerInfo = {0};
+        std::wstring wstr_hostname = opc_server_guid_to_data_.at(guid_ptr).Hostname.toStdWString();
+        ServerInfo.pwszName = wstr_hostname.data();
+        ServerInfo.pAuthInfo = NULL;
+
+        MULTI_QI MultiQI [2] = {0};
+
+        MultiQI [0].pIID = &IID_IOPCSERVER;
+        MultiQI [0].pItf = NULL;
+        MultiQI [0].hr = S_OK;
+
+        hRes = CoCreateInstanceEx(*guid_ptr, NULL, CLSCTX_REMOTE_SERVER, &ServerInfo, 1, MultiQI);
+        opc_server_guid_to_IOPCSErver_.at(guid_ptr) = static_cast<IOPCServer*>(MultiQI[0].pItf);
+    }
+
     if (hRes != S_OK) {
-        QString log_message = QString("ОРС-клиент поток [%1]: ошибка подключения к серверу %2. hRes = 0x%3 : %4")
-                                  .arg(QThread::currentThread()->objectName())
-                                  .arg(server_name)
+        QString log_message = QString("ОРС-клиент поток [%1]: ошибка подключения к серверу %2@%3. hRes = 0x%4 : %5")
+                                  .arg(QThread::currentThread()->objectName(), opc_server_guid_to_data_.at(guid_ptr).Hostname, opc_server_guid_to_data_.at(guid_ptr).ProgID)
                                   .arg(static_cast<unsigned long>(hRes), 10, 16)
                                   .arg(GetErrorStringFromHRESULT(hRes));
 
         emit sg_send_message_to_console(log_message);
         qWarning() << log_message;
 
-        if(opc_server_guid_to_IOPCSErver_.at(opc_server_name_to_guid_.at(server_name)) != NULL) {
-            opc_server_guid_to_IOPCSErver_.at(opc_server_name_to_guid_.at(server_name))->Release();
+        if(opc_server_guid_to_IOPCSErver_.at(guid_ptr) != NULL) {
+            opc_server_guid_to_IOPCSErver_.at(guid_ptr)->Release();
         }
-        opc_server_guid_to_IOPCSErver_.at(opc_server_name_to_guid_.at(server_name)) = NULL;
+        opc_server_guid_to_IOPCSErver_.at(guid_ptr) = NULL;
         return false;
     }
 
-    QString log_message = QString("ОРС-клиент поток [%1]: подключениe к серверу %2 успешно")
-                              .arg(QThread::currentThread()->objectName(), server_name);
+    QString log_message = QString("ОРС-клиент поток [%1]: подключениe к серверу %2@%3 успешно")
+                              .arg(QThread::currentThread()->objectName(), opc_server_guid_to_data_.at(guid_ptr).Hostname, opc_server_guid_to_data_.at(guid_ptr).ProgID);
 
     emit sg_send_message_to_console(log_message);
     qInfo() << log_message;
@@ -276,24 +327,25 @@ bool COPCClient::connect_server_(const QString& server_name) {
     return true;
 }
 
-bool COPCClient::register_group_(const QString& server_name)
+bool COPCClient::register_group_(const GUID* guid_ptr)
 {
     long bActive = 1;
-    IOPCServer* server = opc_server_guid_to_IOPCSErver_.at(opc_server_name_to_guid_.at(server_name));
-    OPCGroupHandler& hgroup = opc_server_guid_to_group_.at(opc_server_name_to_guid_.at(server_name));
+    if(!opc_server_guid_to_IOPCSErver_.contains(guid_ptr) || !opc_server_guid_to_group_.contains(guid_ptr)) return false;
+
+    IOPCServer* server = opc_server_guid_to_IOPCSErver_.at(guid_ptr);
+    OPCGroupHandler& hgroup = opc_server_guid_to_group_.at(guid_ptr);
 
     if(hgroup.opc_handle_group != 0 && hgroup.pItemMgt != NULL && hgroup.pSyncIO != NULL) return true;
 
     if(hgroup.opc_handle_group != 0 && (hgroup.pItemMgt || hgroup.pSyncIO)) {
-        remove_group_(server_name);
+        remove_group_(guid_ptr);
     }
 
     HRESULT hRes = server->AddGroup(OLESTR("OPCDATG_GROUP"), bActive, hgroup.update_rate, 1, NULL, NULL, 0, &hgroup.opc_handle_group, &hgroup.update_rate, __uuidof(IOPCItemMgt), (IUnknown**)&hgroup.pItemMgt);
 
     if (FAILED(hRes)) {
-        QString log_message = QString("ОРС-клиент поток [%1]: ошибка добавления группы тэгов на сервер %2. hRes = 0х%3 : %4")
-                                  .arg(QThread::currentThread()->objectName())
-                                  .arg(server_name)
+        QString log_message = QString("ОРС-клиент поток [%1]: ошибка добавления группы тэгов на сервер %2@%3. hRes = 0х%4 : %5")
+                                  .arg(QThread::currentThread()->objectName(), opc_server_guid_to_data_.at(guid_ptr).Hostname, opc_server_guid_to_data_.at(guid_ptr).ProgID)
                                   .arg(static_cast<unsigned long>(hRes), 10, 16)
                                   .arg(GetErrorStringFromHRESULT(hRes));
 
@@ -313,9 +365,8 @@ bool COPCClient::register_group_(const QString& server_name)
     hRes = hgroup.pItemMgt->QueryInterface(IID_IOPCSYNCIO, (void**)& hgroup.pSyncIO);
 
     if(FAILED(hRes)) {
-        QString log_message = QString("ОРС-клиент поток [%1]: ошибка запроса интерфейса сервера %2. hRes = 0х%3 : %4")
-                                  .arg(QThread::currentThread()->objectName())
-                                  .arg(server_name)
+        QString log_message = QString("ОРС-клиент поток [%1]: ошибка запроса интерфейса сервера %2@%3. hRes = 0х%4 : %5")
+                                  .arg(QThread::currentThread()->objectName(), opc_server_guid_to_data_.at(guid_ptr).Hostname, opc_server_guid_to_data_.at(guid_ptr).ProgID)
                                   .arg(static_cast<unsigned long>(hRes), 10, 16)
                                   .arg(GetErrorStringFromHRESULT(hRes));
 
@@ -330,26 +381,23 @@ bool COPCClient::register_group_(const QString& server_name)
     return true;
 }
 
-void COPCClient::remove_group_(const QString& server_name)
+void COPCClient::remove_group_(const GUID* guid_ptr)
 {
-    if(opc_server_name_to_guid_.count(server_name) == 0) return;
-    if(opc_server_guid_to_IOPCSErver_.count(opc_server_name_to_guid_.at(server_name))
-        || opc_server_guid_to_IOPCSErver_.at(opc_server_name_to_guid_.at(server_name)) == NULL) return;
+    if(!guid_ptr || !opc_server_guid_to_IOPCSErver_.contains(guid_ptr) || opc_server_guid_to_IOPCSErver_.at(guid_ptr) == NULL) return;
 
-    OPCGroupHandler& group_handler = opc_server_guid_to_group_.at(opc_server_name_to_guid_.at(server_name));
+    OPCGroupHandler& group_handler = opc_server_guid_to_group_.at(guid_ptr);
 
-    if(opc_server_guid_to_group_.at(opc_server_name_to_guid_.at(server_name)).pItemMgt != NULL) {
-        if(opc_server_guid_to_group_.at(opc_server_name_to_guid_.at(server_name)).opc_handle_group != 0) {
+    if(opc_server_guid_to_group_.at(guid_ptr).pItemMgt != NULL) {
+        if(opc_server_guid_to_group_.at(guid_ptr).opc_handle_group != 0) {
             HRESULT* hErr = NULL;
             HRESULT hRes;
             if(group_handler.dwCount() > 0) {
                 OPCHANDLE* item_handlers = group_handler.GetTagHandlesArrayToRead();
-                hRes = opc_server_guid_to_group_.at(opc_server_name_to_guid_.at(server_name)).pItemMgt->RemoveItems(group_handler.dwCount(), item_handlers, &hErr);
+                hRes = opc_server_guid_to_group_.at(guid_ptr).pItemMgt->RemoveItems(group_handler.dwCount(), item_handlers, &hErr);
 
                 if(FAILED(hRes)) {
-                    QString log_message = QString("ОРС-клиент поток [%1]: ошибка удаления элементов группы тэгов из сервера %2. hRes = 0х%3 : %4")
-                                              .arg(QThread::currentThread()->objectName())
-                                              .arg(server_name)
+                    QString log_message = QString("ОРС-клиент поток [%1]: ошибка удаления элементов группы тэгов из сервера %2@%3. hRes = 0х%4 : %5")
+                                              .arg(QThread::currentThread()->objectName(), opc_server_guid_to_data_.at(guid_ptr).Hostname, opc_server_guid_to_data_.at(guid_ptr).ProgID)
                                               .arg(static_cast<unsigned long>(hRes), 10, 16)
                                               .arg(GetErrorStringFromHRESULT(hRes));
 
@@ -364,11 +412,10 @@ void COPCClient::remove_group_(const QString& server_name)
                 group_handler.ClearTags();
             }
             if(group_handler.opc_handle_group != 0) {
-                hRes = opc_server_guid_to_IOPCSErver_.at(opc_server_name_to_guid_.at(server_name))->RemoveGroup(group_handler.opc_handle_group, true);
+                hRes = opc_server_guid_to_IOPCSErver_.at(guid_ptr)->RemoveGroup(group_handler.opc_handle_group, true);
                 if(FAILED(hRes)) {
                     QString log_message = QString("ОРС-клиент поток [%1]: ошибка удаления группы тэгов из сервера %2. hRes = 0х%3 : %4")
-                                              .arg(QThread::currentThread()->objectName())
-                                              .arg(server_name)
+                                              .arg(QThread::currentThread()->objectName(), opc_server_guid_to_data_.at(guid_ptr).Hostname, opc_server_guid_to_data_.at(guid_ptr).ProgID)
                                               .arg(static_cast<unsigned long>(hRes), 10, 16)
                                               .arg(GetErrorStringFromHRESULT(hRes));
 
@@ -382,41 +429,38 @@ void COPCClient::remove_group_(const QString& server_name)
         group_handler.pItemMgt->Release();
         group_handler.pItemMgt = NULL;
     }
-    if(opc_server_guid_to_group_.at(opc_server_name_to_guid_.at(server_name)).pSyncIO != NULL) {
+    if(opc_server_guid_to_group_.at(guid_ptr).pSyncIO != NULL) {
         group_handler.pSyncIO->Release();
         group_handler.pSyncIO = NULL;
     }
 }
 
-void COPCClient::disconnect_server_(const QString& server_name)
+void COPCClient::disconnect_server_(const GUID* guid_ptr)
 {
-    if(opc_server_name_to_guid_.count(server_name) == 0) {
-        return;
-    }
+    if(!guid_ptr) return;
 
-    remove_group_(server_name);
+    remove_group_(guid_ptr);
 
-    if (opc_server_guid_to_IOPCSErver_.at(opc_server_name_to_guid_.at(server_name)) != NULL) {
-        opc_server_guid_to_IOPCSErver_.at(opc_server_name_to_guid_.at(server_name))->Release();
-        opc_server_guid_to_IOPCSErver_.at(opc_server_name_to_guid_.at(server_name)) = NULL;
+    if (opc_server_guid_to_IOPCSErver_.at(guid_ptr) != NULL) {
+        opc_server_guid_to_IOPCSErver_.at(guid_ptr)->Release();
+        opc_server_guid_to_IOPCSErver_.at(guid_ptr) = NULL;
 
-        qInfo() << QString("OPC- клиент поток [%1]. Отключен от сервера %2")
-                       .arg(QThread::currentThread()->objectName(), server_name);
+        qInfo() << QString("OPC- клиент поток [%1]. Отключен от сервера %2@%3")
+                       .arg(QThread::currentThread()->objectName(), opc_server_guid_to_data_.at(guid_ptr).Hostname, opc_server_guid_to_data_.at(guid_ptr).ProgID);
     }
 }
 
-size_t COPCClient::read_server_tags_(const QString &server_name)
+size_t COPCClient::read_server_tags_(const GUID* guid_ptr)
 {
-    if(     opc_server_name_to_guid_.count(server_name) == 0
-        || opc_server_guid_to_group_.count(opc_server_name_to_guid_.at(server_name)) == 0) {
+    if(!guid_ptr || opc_server_guid_to_group_.count(guid_ptr) == 0) {
         return 0;
     }
 
-    const OPCGroupHandler& group_hnd = opc_server_guid_to_group_.at(opc_server_name_to_guid_.at(server_name));
+    const OPCGroupHandler& group_hnd = opc_server_guid_to_group_.at(guid_ptr);
 
     if(group_hnd.dwCount() == 0) return 0;
-    if(!connect_server_(server_name)) return 0;
-    if(!register_group_(server_name)) return 0;
+    if(!connect_server_(guid_ptr)) return 0;
+    if(!register_group_(guid_ptr)) return 0;
 
     OPCHANDLE* pHandles = group_hnd.GetTagHandlesArrayToRead();
     tagOPCITEMSTATE *pItemValue = NULL;
@@ -426,9 +470,8 @@ size_t COPCClient::read_server_tags_(const QString &server_name)
     HRESULT hRes = group_hnd.pSyncIO->Read(OPC_DS_DEVICE, group_hnd.dwCount(), pHandles, &pItemValue, &pErrors);
 
     if(FAILED(hRes)) {
-        QString log_message = QString("ОРС-клиент поток [%1]: ошибка чтения тэгов из сервера %2. hRes = 0х%3 : %4")
-                                  .arg(QThread::currentThread()->objectName())
-                                  .arg(server_name)
+        QString log_message = QString("ОРС-клиент поток [%1]: ошибка чтения тэгов из сервера %2@%3. hRes = 0х%4 : %5")
+                                  .arg(QThread::currentThread()->objectName(), opc_server_guid_to_data_.at(guid_ptr).Hostname, opc_server_guid_to_data_.at(guid_ptr).ProgID)
                                   .arg(static_cast<unsigned long>(hRes), 10, 16)
                                   .arg(GetErrorStringFromHRESULT(hRes));
 
@@ -454,18 +497,15 @@ size_t COPCClient::read_server_tags_(const QString &server_name)
     }
 }
 
-size_t COPCClient::write_server_tags_(const QString &server_name)
+size_t COPCClient::write_server_tags_(const GUID* guid_ptr)
 {
-    if(opc_server_name_to_guid_.count(server_name) == 0 || opc_server_guid_to_group_.count(opc_server_name_to_guid_.at(server_name)) == 0) return 0;
+    if(!guid_ptr || opc_server_guid_to_group_.count(guid_ptr) == 0) return 0;
 
-    const OPCGroupHandler& group_hnd = opc_server_guid_to_group_.at(opc_server_name_to_guid_.at(server_name));
+    const OPCGroupHandler& group_hnd = opc_server_guid_to_group_.at(guid_ptr);
 
-    if(group_hnd.dwCount() == 0) {
-
-        return 0;
-    }
-    if(!connect_server_(server_name)) return 0;
-    if(!register_group_(server_name)) return 0;
+    if(group_hnd.dwCount() == 0) return 0;
+    if(!connect_server_(guid_ptr)) return 0;
+    if(!register_group_(guid_ptr)) return 0;
 
     auto [pHandles, pItemValues, dwCount] = group_hnd.GetTagHandlesArrayToWrite();
 
@@ -481,9 +521,8 @@ size_t COPCClient::write_server_tags_(const QString &server_name)
     HRESULT hRes = group_hnd.pSyncIO->Write(dwCount, pHandles, pItemValues, &pErrors);
 
     if(FAILED(hRes)) {
-        QString log_message = QString("ОРС-клиент поток [%1]: ошибка записи тэгов из сервера %2. hRes = 0х%3 : %4")
-                                  .arg(QThread::currentThread()->objectName())
-                                  .arg(server_name)
+        QString log_message = QString("ОРС-клиент поток [%1]: ошибка записи тэгов из сервера %2@%3. hRes = 0х%3 : %4")
+                                  .arg(QThread::currentThread()->objectName(), opc_server_guid_to_data_.at(guid_ptr).Hostname, opc_server_guid_to_data_.at(guid_ptr).ProgID)
                                   .arg(static_cast<unsigned long>(hRes), 10, 16)
                                   .arg(GetErrorStringFromHRESULT(hRes));
 
@@ -510,13 +549,13 @@ size_t COPCClient::write_server_tags_(const QString &server_name)
     }
 }
 
-size_t COPCClient::add_tags_to_group_(const QString& server_name, std::vector<std::shared_ptr<OPCTag>>& tags)
+size_t COPCClient::add_tags_to_group_(const GUID* guid_ptr, std::vector<std::shared_ptr<OPCTag>>& tags)
 {
-    if(opc_server_name_to_guid_.count(server_name) == 0) return 0;
+    if(!guid_ptr) return 0;
     if(tags.size() == 0) return 0;
-    if(!connect_server_(server_name) || !register_group_(server_name)) return 0;
+    if(!connect_server_(guid_ptr) || !register_group_(guid_ptr)) return 0;
 
-    OPCGroupHandler& group_handler = opc_server_guid_to_group_.at(opc_server_name_to_guid_.at(server_name));
+    OPCGroupHandler& group_handler = opc_server_guid_to_group_.at(guid_ptr);
     std::vector<std::shared_ptr<OPCTag>> tags_checked;
 
     for(const auto& it: tags) {
@@ -543,8 +582,8 @@ size_t COPCClient::add_tags_to_group_(const QString& server_name, std::vector<st
             group_handler.AddTagWithHandle(tags_checked.at(i), pResults[i].hServer);
         }
     } else {
-        QString log_message = QString("ОРС-клиент поток [%1]: ошибка добавления тэгов в группу. hRes = 0х%2 : %3")
-                                  .arg(QThread::currentThread()->objectName())
+        QString log_message = QString("ОРС-клиент поток [%1]: ошибка добавления тэгов в группу сервера %2@%3. hRes = 0х%4 : %5")
+                                  .arg(QThread::currentThread()->objectName(), opc_server_guid_to_data_.at(guid_ptr).Hostname, opc_server_guid_to_data_.at(guid_ptr).ProgID)
                                   .arg(static_cast<unsigned long>(hRes), 10, 16)
                                   .arg(GetErrorStringFromHRESULT(hRes));
 
@@ -560,48 +599,78 @@ size_t COPCClient::add_tags_to_group_(const QString& server_name, std::vector<st
     return count_tags;
 }
 
-std::set<QString> COPCClient::GetOPCServerNames() const {
-    std::set<QString> ret_set;
-    for(const auto& [guid, opc_data]: opc_server_guid_to_data_) {
-        ret_set.insert(opc_data.ProgID);
+const std::set<QString>& COPCClient::GetOPCServerNames(const QString& hostname) {
+    if(hostnames_.count(hostname) == 0 || host_to_opc_names_.count(&(*hostnames_.find(hostname))) == 0) {
+        get_registered_servers_(hostname);
     }
-    return ret_set;
+
+    return host_to_opc_names_.at(&(*hostnames_.find(hostname)));
 }
 
-std::vector<QString> COPCClient::GetOPCTagsNames(const QString &server_name)
+const std::vector<QString>& COPCClient::GetOPCTagsNames(const QString& hostname, const QString &server_name, int notify_of_portion)
 {
-    if(opc_server_name_to_guid_.count(server_name) == 0) {
-        return {};
+    if(!hostnames_.contains(hostname)) {
+        get_registered_servers_(hostname);
     }
 
-    if(opc_server_guid_to_tag_names_.count(opc_server_name_to_guid_.at(server_name)) > 0) {
-        return opc_server_guid_to_tag_names_.at(opc_server_name_to_guid_.at(server_name));
+    auto host_it = hostnames_.find(hostname);
+    if(!host_to_opc_names_.at(&(*host_it)).contains(server_name)) {
+        return empty_vec_;
     }
 
-    std::vector<QString> ret_vec;
-    if(!connect_and_browse_server_(server_name, ret_vec)) {
-        return {};
+    auto server_it = host_to_opc_names_.at(&(*host_it)).find(server_name);
+
+    if(opc_server_to_guid_.count(&(*server_it)) == 0) {
+        return empty_vec_;
     }
 
-    opc_server_guid_to_tag_names_[opc_server_name_to_guid_.at(server_name)] = std::move(ret_vec);
-    return opc_server_guid_to_tag_names_.at(opc_server_name_to_guid_.at(server_name));
+    if(opc_server_guid_to_tag_names_.at(opc_server_to_guid_.at(&(*server_it))).size() > 0) {
+        return opc_server_guid_to_tag_names_.at(opc_server_to_guid_.at(&(*server_it)));
+    }
+
+    const GUID* guid_ptr = opc_server_to_guid_.at(&(*server_it));
+
+    if(!connect_server_(guid_ptr)) return empty_vec_;
+
+    browse_server_address_space_(guid_ptr, notify_of_portion);
+
+    QString log_message = QString("Обзор тэгов OPC сервера %1@%2: количество тэгов %3")
+                            .arg(opc_server_guid_to_data_.at(guid_ptr).Hostname, opc_server_guid_to_data_.at(guid_ptr).ProgID)
+                            .arg(opc_server_guid_to_tag_names_.at(guid_ptr).size());
+
+    emit sg_send_message_to_console(log_message);
+    qInfo() << log_message;
+
+    emit sg_get_all_tag_names_from_server(opc_server_guid_to_data_.at(guid_ptr).Hostname, opc_server_guid_to_data_.at(guid_ptr).ProgID, opc_server_guid_to_tag_names_.at(guid_ptr).size());
+
+    return opc_server_guid_to_tag_names_.at(guid_ptr);
 }
 
 size_t COPCClient::AddTags(std::vector<std::shared_ptr<OPCTag>> &tags)
 {
-    std::unordered_map<QString, std::vector<std::shared_ptr<OPCTag>>> tags_map_temp;
+    std::unordered_map<const GUID*, std::vector<std::shared_ptr<OPCTag>>> tags_map_temp;
     size_t ret_val = 0;
 
     for(const auto& it: tags) {
-        if(it && opc_server_name_to_guid_.count(it->GetServerName()) > 0
-            && !opc_server_guid_to_group_.at(opc_server_name_to_guid_.at(it->GetServerName())).CheckTagExist(it)) {
+        if(!it) continue;
 
-            tags_map_temp[it->GetServerName()].push_back(it);
+        if(!hostnames_.contains(it->GetHostname())) {
+            get_registered_servers_(it->GetHostname());
+        }
+        auto host_it = hostnames_.find(it->GetHostname());
+
+        if(!host_to_opc_names_.at(&(*host_it)).contains(it->GetServerName())) continue;
+        auto server_it = host_to_opc_names_.at(&(*host_it)).find(it->GetServerName());
+
+        if(opc_server_to_guid_.contains(&(*server_it))
+            && !opc_server_guid_to_group_.at(opc_server_to_guid_.at(&(*server_it))).CheckTagExist(it)) {
+
+            tags_map_temp[opc_server_to_guid_.at(&(*server_it))].push_back(it);
         }
     }
 
-    for(auto& [name, opc_vec]: tags_map_temp) {
-        ret_val += add_tags_to_group_(name, opc_vec);
+    for(auto& [guid_ptr, opc_vec]: tags_map_temp) {
+        ret_val += add_tags_to_group_(guid_ptr, opc_vec);
     }
 
     return ret_val;
@@ -610,8 +679,8 @@ size_t COPCClient::AddTags(std::vector<std::shared_ptr<OPCTag>> &tags)
 size_t COPCClient::ReadTags()
 {
     size_t ret_val = 0;
-    for(const auto& [guid, server_data]: opc_server_guid_to_data_) {
-        ret_val += read_server_tags_(server_data.ProgID);
+    for(const auto& [guid, _]: opc_server_guid_to_group_) {
+        ret_val += read_server_tags_(guid);
     }
     return ret_val;
 }
@@ -619,8 +688,8 @@ size_t COPCClient::ReadTags()
 size_t COPCClient::WriteTags()
 {
     size_t ret_val = 0;
-    for(const auto& [guid, server_data]: opc_server_guid_to_data_) {
-        ret_val += write_server_tags_(server_data.ProgID);
+    for(const auto& [guid, _]: opc_server_guid_to_group_) {
+        ret_val += write_server_tags_(guid);
     }
     return ret_val;
 }
@@ -628,21 +697,31 @@ size_t COPCClient::WriteTags()
 void COPCClient::ClearTags()
 {
     for(auto& [guid_ptr, opc_group]: opc_server_guid_to_group_) {
-        remove_group_(opc_server_guid_to_data_.at(guid_ptr).ProgID);
+        remove_group_(guid_ptr);
         opc_group.ClearTags();
     }
 }
 
-std::optional<OPCSERVERSTATUS> COPCClient::GetServerStatus(const QString &server_name)
+std::optional<OPCSERVERSTATUS> COPCClient::GetServerStatus(const QString& hostname, const QString& server_name)
 {
-    if(opc_server_name_to_guid_.count(server_name) == 0) return std::nullopt;
-    if(opc_server_guid_to_IOPCSErver_.at(opc_server_name_to_guid_.at(server_name)) == NULL) {
-        if(!connect_server_(server_name)) return std::nullopt;
+    if(!hostnames_.contains(hostname) || !host_to_opc_names_.contains(&(*hostnames_.find(hostname)))) {
+        return std::nullopt;
+    }
+
+    auto host_it = hostnames_.find(hostname);
+    auto server_it = host_to_opc_names_.at(&(*host_it)).find(server_name);
+
+    if(!opc_server_to_guid_.contains(&(*server_it))) return std::nullopt;
+
+    const GUID* guid_ptr = opc_server_to_guid_.at(&(*server_it));
+
+    if(opc_server_guid_to_IOPCSErver_.at(guid_ptr) == NULL) {
+        if(!connect_server_(guid_ptr)) return std::nullopt;
     }
 
     OPCSERVERSTATUS* ret_str_ptr = NULL;
     OPCSERVERSTATUS ret_str;
-    HRESULT hres = opc_server_guid_to_IOPCSErver_.at(opc_server_name_to_guid_.at(server_name))->GetStatus(&ret_str_ptr);
+    HRESULT hres = opc_server_guid_to_IOPCSErver_.at(guid_ptr)->GetStatus(&ret_str_ptr);
     if(FAILED(hres)) {
         CoTaskMemFree(ret_str_ptr);
         if(ret_str_ptr != NULL) {

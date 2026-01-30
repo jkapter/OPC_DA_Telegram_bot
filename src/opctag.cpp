@@ -1,6 +1,7 @@
 #include "opctag.h"
 
 using namespace OPC_HELPER;
+using namespace Qt::StringLiterals;
 
 QString OPC_HELPER::GetVTypeString(const unsigned short usType)
 {
@@ -25,23 +26,23 @@ QString OPC_HELPER::GetVTypeString(const unsigned short usType)
 QString OPC_HELPER::GetQualityString(const unsigned short usQuality)
 {
     switch (usQuality) {
-    case 0x00: return "Bad";
-    case 0x04: return "Config Error";
-    case 0x08: return "Not Connected";
-    case 0x0C: return "Device Failure";
-    case 0x10: return "Sensor Failure";
-    case 0x14: return "Last Known";
-    case 0x18: return "Comm Failure";
-    case 0x1C: return "Out of Service";
-    case 0x20: return "Initializing";
-    case 0x40: return "Uncertain";
-    case 0x44: return "Last Usable";
-    case 0x50: return "Sensor Calibration";
-    case 0x54: return "EGU Exceeded";
-    case 0x58: return "Sub Normal";
-    case 0xC0: return "Good";
-    case 0xD8: return "Local Override";
-    default: return "Unknown";
+    case 0x00: return u"Bad"_s;
+    case 0x04: return u"Config Error"_s;
+    case 0x08: return u"Not Connected"_s;
+    case 0x0C: return u"Device Failure"_s;
+    case 0x10: return u"Sensor Failure"_s;
+    case 0x14: return u"Last Known"_s;
+    case 0x18: return u"Comm Failure"_s;
+    case 0x1C: return u"Out of Service"_s;
+    case 0x20: return u"Initializing"_s;
+    case 0x40: return u"Uncertain"_s;
+    case 0x44: return u"Last Usable"_s;
+    case 0x50: return u"Sensor Calibration"_s;
+    case 0x54: return u"EGU Exceeded"_s;
+    case 0x58: return u"Sub Normal"_s;
+    case 0xC0: return u"Good"_s;
+    case 0xD8: return u"Local Override"_s;
+    default: return u"Unknown"_s;
     }
 }
 
@@ -139,13 +140,34 @@ int64_t OPC_HELPER::toLongLong(OpcValueType val) {
     }
 }
 
+OPCTag::OPCTag(const QString& fullname)
+{
+    QRegularExpression re("^([^@]*)@([^@#].*)#(.*)$");
+    QRegularExpressionMatch match = re.match(fullname);
+    if(match.hasMatch()) {
+        hostname_ = match.captured(1);
+        server_name_ = match.captured(2);
+        tag_name_ = match.captured(3);
+        tag_name_wstring_ = tag_name_.toStdWString();
+        comment_ = QString("%1@%2").arg(hostname_, server_name_);
+    }
+}
 
 OPCTag::OPCTag(const QString& server_name, const QString& tag_name)
-    : server_name_(server_name)
+    : hostname_(u"localhost"_s)
+    , server_name_(server_name)
     , tag_name_(tag_name)
     , tag_name_wstring_(tag_name.toStdWString())
-{
-}
+    , comment_(QString("%1@%2").arg(u"localhost"_s, server_name))
+{}
+
+OPCTag::OPCTag(const QString& host_name, const QString& server_name, const QString& tag_name)
+    : hostname_(host_name)
+    , server_name_(server_name)
+    , tag_name_(tag_name)
+    , tag_name_wstring_(tag_name.toStdWString())
+    , comment_(QString("%1@%2").arg(host_name, server_name))
+{}
 
 void OPCTag::SetType(VARENUM type) {
     type_ = type;
@@ -297,16 +319,25 @@ bool OPCTag::ValueIsBool() const {
     return type_ == VT_BOOL;
 }
 
-QString OPCTag::GetServerName() const {
+const QString& OPCTag::GetServerName() const {
     return server_name_;
 }
 
-QString OPCTag::GetTagName() const {
+const QString& OPCTag::GetTagName() const {
     return tag_name_;
 }
 
-QString OPCTag::GetCommentString() const {
+const QString& OPCTag::GetCommentString() const {
     return comment_;
+}
+
+const QString& OPCTag::GetHostname() const {
+    return hostname_;
+}
+
+QString OPCTag::GetFullName() const
+{
+    return QString("%1@%2#%3").arg(hostname_, server_name_, tag_name_);
 }
 
 void OPCTag::SetCommentString(QString str) {

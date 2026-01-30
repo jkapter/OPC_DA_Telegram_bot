@@ -1,13 +1,15 @@
 #include "opcclientworker.h"
 
 using namespace OPC_HELPER;
+using namespace Qt::StringLiterals;
 
 OPCClientInterface::OPCClientInterface(std::vector<std::shared_ptr<OPCTag>>& tags, QObject *parent)
     : QObject(parent)
     , tags_(tags)
 {
     for(const auto& tag: tags_) {
-        server_names_.insert(tag->GetServerName());
+        auto host_it = hostnames_.insert(tag->GetHostname()).first;
+        hostname_to_server_names_[&(*host_it)].insert(tag->GetServerName());
     }
 
     qInfo() << QString("ОРС клиент поток [%1]: новый экземпляр.").arg(QThread::currentThread()->objectName());
@@ -18,20 +20,22 @@ void OPCClientInterface::sl_stop()
     request_interrupt_ = true;
 }
 
-void OPCClientInterface::SetTagsList(std::vector<std::shared_ptr<OPCTag>>& tags) {
+void OPCClientInterface::SetTagsList(const std::vector<std::shared_ptr<OPCTag>>& tags) {
     tags_.clear();
     tags_.reserve(tags.size());
     tags_ = tags;
-    server_names_.clear();
+    hostnames_.clear();
+    hostname_to_server_names_.clear();
 
     for(const auto& tag: tags_) {
-        server_names_.insert(tag->GetServerName());
+        auto host_it = hostnames_.insert(tag->GetHostname()).first;
+        hostname_to_server_names_[&(*host_it)].insert(tag->GetServerName());
     }
 
     qInfo() << QString("ОРС клиент поток [%1]: добавлено %2 тэгов для чтения.").arg(QThread::currentThread()->objectName()).arg(tags.size());
 }
 
-void OPCClientInterface::SetTagsList(std::vector<std::shared_ptr<OPCTag> > &&tags)
+void OPCClientInterface::SetTagsList(const std::vector<std::shared_ptr<OPCTag> > &&tags)
 {
     auto vec = std::move(tags);
     SetTagsList(vec);
@@ -60,7 +64,7 @@ void OPCCLientPeriodic::sl_process()
 
     try {
         opc_client_->AddTags(tags_);
-        while(!request_interrupt_) {
+        while(!request_interrupt_ && !QThread::currentThread()->isInterruptionRequested()) {
             start_tick = std::chrono::steady_clock::now();
             size_t res = opc_client_->WriteTags();
             if(res > 0) {
@@ -82,15 +86,17 @@ void OPCCLientPeriodic::sl_process()
                                   .arg(static_cast<quint64>(tags_.size()));
             }
 
-            for(const auto& name: server_names_) {
-                auto s_status = opc_client_->GetServerStatus(name);
-                if(!s_status.has_value() || s_status.value().dwServerState != OPC_STATUS_RUNNING) {
-                    emit sg_server_error(name, s_status.has_value() ? s_status.value().dwServerState : OPC_STATUS_COMM_FAULT);
-                    QString log_message = QString("Поток ОРС-клиента [%1]: ошибка сервера %2 : %3")
-                                                    .arg(QThread::currentThread()->objectName(), name)
-                                                    .arg(s_status.has_value() ? static_cast<int>(s_status.value().dwServerState) : OPC_STATUS_COMM_FAULT);
-                    emit sg_send_message_to_console(log_message);
-                    qWarning() << log_message;
+            for(const auto& [host, server_set]: hostname_to_server_names_) {
+                for(const auto& server_name: server_set) {
+                    auto s_status = opc_client_->GetServerStatus(*host, server_name);
+                    if(!s_status.has_value() || s_status.value().dwServerState != OPC_STATUS_RUNNING) {
+                        emit sg_server_error(*host, server_name, s_status.has_value() ? s_status.value().dwServerState : OPC_STATUS_COMM_FAULT);
+                        QString log_message = QString("Поток ОРС-клиента [%1]: ошибка сервера %2@%3 : %4")
+                                                        .arg(QThread::currentThread()->objectName(), *host, server_name)
+                                                        .arg(s_status.has_value() ? static_cast<int>(s_status.value().dwServerState) : OPC_STATUS_COMM_FAULT);
+                        emit sg_send_message_to_console(log_message);
+                        qWarning() << log_message;
+                    }
                 }
             }
 
@@ -129,15 +135,17 @@ void OPCCLientOnRequest::sl_process() {
         res = opc_client_->ReadTags();
         reading_complete = res == tags_.size();
 
-        for(const auto& name: server_names_) {
-            auto s_status = opc_client_->GetServerStatus(name);
-            if(!s_status.has_value() || s_status.value().dwServerState != OPC_STATUS_RUNNING) {
-                emit sg_server_error(name, s_status.has_value() ? s_status.value().dwServerState : OPC_STATUS_COMM_FAULT);
-                QString log_message = QString("Поток ОРС-клиента [%1]: ошибка сервера %2 : %3")
-                                          .arg(QThread::currentThread()->objectName(), name)
-                                          .arg(static_cast<int>(s_status.has_value() ? s_status.value().dwServerState : OPC_STATUS_COMM_FAULT));
-                emit sg_send_message_to_console(log_message);
-                qWarning() << log_message;
+        for(const auto& [host, server_set]: hostname_to_server_names_) {
+            for(const auto& server_name: server_set) {
+                auto s_status = opc_client_->GetServerStatus(*host, server_name);
+                if(!s_status.has_value() || s_status.value().dwServerState != OPC_STATUS_RUNNING) {
+                    emit sg_server_error(*host, server_name, s_status.has_value() ? s_status.value().dwServerState : OPC_STATUS_COMM_FAULT);
+                    QString log_message = QString("Поток ОРС-клиента [%1]: ошибка сервера %2@%3 : %4")
+                                              .arg(QThread::currentThread()->objectName(), *host, server_name)
+                                              .arg(static_cast<int>(s_status.has_value() ? s_status.value().dwServerState : OPC_STATUS_COMM_FAULT));
+                    emit sg_send_message_to_console(log_message);
+                    qWarning() << log_message;
+                }
             }
         }
 
@@ -155,4 +163,35 @@ void OPCCLientOnRequest::sl_process() {
         emit sg_reading_error(res);
     }
     emit sg_finished();
+}
+
+//=========================================================
+//======= T A G B R O W S E R =============================
+//=========================================================
+void OPCClientTagBrowser::sl_process()
+{
+    std::unique_ptr<OPC_HELPER::COPCClient> opc_client_ = std::make_unique<OPC_HELPER::COPCClient>();
+    QObject::connect(opc_client_.get(), SIGNAL(sg_send_message_to_console(QString)), this, SIGNAL(sg_send_message_to_console(QString)));
+    QObject::connect(opc_client_.get(), SIGNAL(sg_get_part_tag_names_from_server(const QString&, const QString&, size_t)),
+                     this, SIGNAL(sg_get_part_tag_names_from_server(const QString&, const QString&, size_t)));
+    QObject::connect(opc_client_.get(), SIGNAL(sg_get_all_tag_names_from_server(const QString&, const QString&, size_t)),
+                     this, SIGNAL(sg_get_all_tag_names_from_server(const QString&, const QString&, size_t)));
+
+    try {
+        QMutexLocker locker(&vec_lock_);
+        tags_list_.clear();
+        tags_list_.reserve(1000);
+        auto res_vec = opc_client_->GetOPCTagsNames(hostname_, server_name_);
+        tags_list_ = {res_vec.begin(), res_vec.end()};
+    } catch (std::exception& e) {
+        emit sg_opcclient_got_exception(QString::fromStdString(e.what()));
+    }
+
+    emit sg_browse_complete(tags_list_.size());
+    emit sg_finished();
+}
+
+void OPCClientTagBrowser::sl_stop_browsing()
+{
+    QThread::currentThread()->requestInterruption();
 }

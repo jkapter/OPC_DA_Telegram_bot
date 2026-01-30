@@ -84,7 +84,8 @@ void OPCValuesViewer::showEvent(QShowEvent* event) {
 }
 
 void OPCValuesViewer::sl_pb_readonce_clicked()
-{   auto vec_per = opc_data_manager_->GetPeriodicTags();
+{
+    auto vec_per = opc_data_manager_->GetPeriodicTags();
     opc_data_manager_->ReadTagsOnce(vec_per);
 }
 

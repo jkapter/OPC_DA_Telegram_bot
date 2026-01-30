@@ -16,6 +16,9 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QGroupBox" name="groupBox_18">
+     <property name="whatsThis">
+      <string>styledGB</string>
+     </property>
      <property name="title">
       <string>ID сообщения</string>
      </property>
@@ -31,6 +34,9 @@
    </item>
    <item>
     <widget class="QGroupBox" name="groupBox_17">
+     <property name="whatsThis">
+      <string>styledGB</string>
+     </property>
      <property name="title">
       <string>Текст сообщения</string>
      </property>
@@ -104,6 +110,9 @@ __подчеркнутый__
    </item>
    <item>
     <widget class="QGroupBox" name="groupBox_19">
+     <property name="whatsThis">
+      <string>styledGB</string>
+     </property>
      <property name="title">
       <string>ОРС Тэги</string>
      </property>
@@ -116,6 +125,9 @@ __подчеркнутый__
    </item>
    <item>
     <widget class="QGroupBox" name="gbInlineButtons">
+     <property name="whatsThis">
+      <string>styledGB</string>
+     </property>
      <property name="title">
       <string>Действия</string>
      </property>
