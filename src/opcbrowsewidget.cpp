@@ -142,8 +142,8 @@ void OpcBrowseWidget::fill_tags_list_(const QString& hostname, const QString& se
         QObject::connect(browser, SIGNAL(sg_finished()), opc_thread, SLOT(quit()));
         QObject::connect(opc_thread, SIGNAL(finished()), opc_thread, SLOT(deleteLater()));
         QObject::connect(opc_thread, &QThread::finished, this, [this](){--opc_threads_count_;});
-        QObject::connect(browser, SIGNAL(sg_get_part_tag_names_from_server(QString,QString,size_t)), this, SLOT(sl_browser_get_part_tags(QString,QString,size_t)));
-        QObject::connect(browser, SIGNAL(sg_get_all_tag_names_from_server(QString,QString,size_t)), this, SLOT(sl_browser_get_all_tags(QString,QString,size_t)));
+        QObject::connect(browser, SIGNAL(sg_get_part_tag_names_from_server(const QString&,const QString&,size_t)), this, SLOT(sl_browser_get_part_tags(const QString&,const QString&,size_t)));
+        QObject::connect(browser, SIGNAL(sg_get_all_tag_names_from_server(const QString&,const QString&,size_t)), this, SLOT(sl_browser_get_all_tags(const QString&,const QString&,size_t)));
 
         browser->moveToThread(opc_thread);
         opc_thread->start();
@@ -286,7 +286,7 @@ void OpcBrowseWidget::sl_opc_servers_tree_widget_context_menu_requested(const QP
 void OpcBrowseWidget::sl_add_opc_server_to_tree()
 {
     OPCAddHostDialog* new_host_dialog = new OPCAddHostDialog(this);
-    QObject::connect(new_host_dialog, SIGNAL(sg_add_new_host(QString)),this, SLOT(sl_add_new_host_to_tree(QString)));
+    QObject::connect(new_host_dialog, SIGNAL(sg_add_new_host(const QString&)),this, SLOT(sl_add_new_host_to_tree(const QString&)));
     new_host_dialog->exec();
     new_host_dialog->deleteLater();
 }
@@ -308,7 +308,7 @@ void OpcBrowseWidget::sl_delete_opc_server_from_tree()
     }
 }
 
-void OpcBrowseWidget::sl_add_new_host_to_tree(QString hostname)
+void OpcBrowseWidget::sl_add_new_host_to_tree(const QString& hostname)
 {
     auto [host_it, b] = host_names_.insert(hostname);
     if(b) {
@@ -325,7 +325,7 @@ void OpcBrowseWidget::sl_add_new_host_to_tree(QString hostname)
     }
 }
 
-void OpcBrowseWidget::sl_browser_get_part_tags(QString hostname, QString server_name, size_t n_tags)
+void OpcBrowseWidget::sl_browser_get_part_tags(const QString& hostname, const QString& server_name, size_t n_tags)
 {
     auto host_it = host_names_.find(hostname);
     if(host_it == host_names_.end()) return;
@@ -340,7 +340,7 @@ void OpcBrowseWidget::sl_browser_get_part_tags(QString hostname, QString server_
     }
 }
 
-void OpcBrowseWidget::sl_browser_get_all_tags(QString hostname, QString server_name, size_t n_tags)
+void OpcBrowseWidget::sl_browser_get_all_tags(const QString& hostname, const QString& server_name, size_t n_tags)
 {
     auto host_it = host_names_.find(hostname);
     if(host_it == host_names_.end()) return;

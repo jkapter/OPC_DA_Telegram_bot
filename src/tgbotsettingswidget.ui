@@ -35,7 +35,7 @@
    <item>
     <widget class="QTabWidget" name="tabBotSettings">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tabBotManage">
       <attribute name="title">

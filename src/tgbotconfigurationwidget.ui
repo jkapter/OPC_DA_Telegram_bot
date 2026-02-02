@@ -38,7 +38,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="tbMessageConfig">
       <attribute name="title">
@@ -295,6 +295,9 @@
                  <height>40</height>
                 </size>
                </property>
+               <property name="toolTip">
+                <string>Добавить команду меню</string>
+               </property>
                <property name="text">
                 <string>...</string>
                </property>
@@ -317,6 +320,9 @@
                  <width>40</width>
                  <height>40</height>
                 </size>
+               </property>
+               <property name="toolTip">
+                <string>Удалить команду меню</string>
                </property>
                <property name="text">
                 <string>...</string>
@@ -341,6 +347,9 @@
                  <height>40</height>
                 </size>
                </property>
+               <property name="toolTip">
+                <string>Сохранить команду</string>
+               </property>
                <property name="text">
                 <string>...</string>
                </property>
@@ -363,6 +372,9 @@
                  <width>40</width>
                  <height>40</height>
                 </size>
+               </property>
+               <property name="toolTip">
+                <string>Добавить команду в основное меню</string>
                </property>
                <property name="text">
                 <string>...</string>
@@ -518,6 +530,9 @@
                  <height>40</height>
                 </size>
                </property>
+               <property name="toolTip">
+                <string>Добавить событие по изменению тэга</string>
+               </property>
                <property name="text">
                 <string/>
                </property>
@@ -540,6 +555,9 @@
                  <width>40</width>
                  <height>40</height>
                 </size>
+               </property>
+               <property name="toolTip">
+                <string>Добавить периодическое событие</string>
                </property>
                <property name="text">
                 <string>...</string>
@@ -564,6 +582,9 @@
                  <height>40</height>
                 </size>
                </property>
+               <property name="toolTip">
+                <string>Удалить событие</string>
+               </property>
                <property name="text">
                 <string/>
                </property>
@@ -586,6 +607,9 @@
                  <width>40</width>
                  <height>40</height>
                 </size>
+               </property>
+               <property name="toolTip">
+                <string>Сохранить событие</string>
                </property>
                <property name="text">
                 <string/>
@@ -726,6 +750,9 @@
                  <height>40</height>
                 </size>
                </property>
+               <property name="toolTip">
+                <string>Добавить встраиваемую кнопку</string>
+               </property>
                <property name="text">
                 <string>...</string>
                </property>
@@ -749,6 +776,9 @@
                  <height>40</height>
                 </size>
                </property>
+               <property name="toolTip">
+                <string>Удалить встраивамю кнопку</string>
+               </property>
                <property name="text">
                 <string>...</string>
                </property>
@@ -771,6 +801,9 @@
                  <width>40</width>
                  <height>40</height>
                 </size>
+               </property>
+               <property name="toolTip">
+                <string>Сохранить встраиваемую кнопку</string>
                </property>
                <property name="text">
                 <string>...</string>

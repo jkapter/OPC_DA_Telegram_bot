@@ -1,1 +1,1 @@
-OPCDATgBot.exe -token=""
+OPCDATgBot.exe -token="8573476009:AAGY0AwKwRUXT0qtQKNt6jduHPuwl1RZY0o"
