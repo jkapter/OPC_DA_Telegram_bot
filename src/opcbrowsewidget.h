@@ -43,9 +43,9 @@ private slots:
     void sl_opc_servers_tree_widget_context_menu_requested(const QPoint& pos);
     void sl_add_opc_server_to_tree();
     void sl_delete_opc_server_from_tree();
-    void sl_add_new_host_to_tree(QString hostname);
-    void sl_browser_get_part_tags(QString hostname, QString server_name, size_t n_tags);
-    void sl_browser_get_all_tags(QString hostname, QString server_name, size_t n_tags);
+    void sl_add_new_host_to_tree(const QString& hostname);
+    void sl_browser_get_part_tags(const QString& hostname, const QString& server_name, size_t n_tags);
+    void sl_browser_get_all_tags(const QString& hostname, const QString& server_name, size_t n_tags);
 
 private:
     Ui::OpcBrowseWidget *ui;

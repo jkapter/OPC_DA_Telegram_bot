@@ -167,6 +167,8 @@ TgBotManager::~TgBotManager() {
         QString path = QString("%1/autosave").arg(app_dir.absolutePath());
         qInfo() << QString("Автосохранение кофигурационных файлов TgBotManager в папке %1").arg(path);
         SaveDataToJson(path);
+        QString users_file = QString("%1%2").arg(app_dir.absolutePath(), "/users.json");
+        save_user_data_to_file_(users_file);
     } else {
         qWarning() << "Автосохранение кофигурационных файлов TgBotManager не удалось.";
     }

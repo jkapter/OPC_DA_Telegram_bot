@@ -74,6 +74,7 @@ void TGEventsConfigurationWidget::sl_opc_table_messages_double_click(int row, in
     ui->leTagCompareValueHysterezis->setText("0");
     ui->leTagCompareValue->setValidator(get_event_values_validator(opc_tag.get()));
     ui->leTagCompareValueHysterezis->setValidator(get_event_values_validator(opc_tag.get()));
+    load_data_from_event_(ui->leEventID->text().toStdString());
 }
 
 void TGEventsConfigurationWidget::clear_event_data_()
@@ -245,6 +246,11 @@ void TGEventsConfigurationWidget::load_data_from_event_(const std::string &id)
 
     ui->leEventID->setText(QString::fromStdString(current_event_->GetId()));
     ui->leEventID->setEnabled(true);
+    ui->cbTGEventConfCompareType->setEnabled(true);
+    ui->leTagCompareValue->setEnabled(true);
+    ui->leTagCompareValueHysterezis->setEnabled(true);
+    ui->cbTGEventConfUserLevel->setEnabled(true);
+
     auto [tag_ptr, type, ival, ihys] = current_event_->GetTagTrigger();
     if(tag_ptr) {
         ui->leTagNameEvent->setText(QString("%1: %2").arg(tg_bot_manager_.GetTGParent()->OPCManager()->GetTagId(tag_ptr->GetTagName())).arg(tag_ptr->GetTagName()));
@@ -267,8 +273,6 @@ void TGEventsConfigurationWidget::load_data_from_event_(const std::string &id)
         ui->leTagCompareValue->setValidator(get_event_values_validator(tag_ptr));
         ui->leTagCompareValueHysterezis->setText(OPC_HELPER::toString(ihys));
         ui->leTagCompareValueHysterezis->setValidator(get_event_values_validator(tag_ptr));
-        ui->leTagCompareValue->setEnabled(true);
-        ui->leTagCompareValueHysterezis->setEnabled(true);
     }
 
     int auth_ind;
