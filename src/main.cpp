@@ -55,9 +55,26 @@ int main(int argc, char *argv[])
     do {
         std::unique_ptr<OPC_HELPER::OPCDataManager> opc_manager_ptr(new OPC_HELPER::OPCDataManager());
         std::unique_ptr<TgBotManager> tg_bot_manager_ptr(new TgBotManager(*opc_manager_ptr.get()));
+        bool start_app_minimized = false;
+
+        {
+        QFile input_file("settings.json");
+        if(input_file.open(QIODeviceBase::ReadOnly)) {
+            QJsonParseError json_error;
+            QJsonDocument input_doc = QJsonDocument::fromJson(input_file.readAll(), &json_error);
+            if(json_error.error == QJsonParseError::NoError
+                && input_doc.object().contains("start_application_on_tray") && input_doc.object().value("start_application_on_tray").isBool()) {
+
+                start_app_minimized = input_doc.object().value("start_application_on_tray").toBool();
+            }
+        }
+        }
 
         MainWindow w(tg_bot_manager_ptr.get(), opc_manager_ptr.get());
-        w.show();
+
+        if(!start_app_minimized) {
+            w.show();
+        }
 
         exit_code = app.exec();
 

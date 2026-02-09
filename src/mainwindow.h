@@ -31,7 +31,7 @@ class MainWindow : public QMainWindow
 public:
     //MainWindow(QWidget *parent = nullptr) = 0;
     MainWindow(TgBotManager* bot_manager, OPC_HELPER::OPCDataManager* opc_data_manager, QWidget *parent = nullptr);
-    ~MainWindow();
+    virtual ~MainWindow();
 
     static int const EXIT_CODE_REBOOT;
 
@@ -61,6 +61,7 @@ private slots:
     void sl_pb_savedatafiles_clicked();
     void sl_restart_app_cmd(bool auto_restart = false);
     void sl_auto_restart_app_checkbox_changed(Qt::CheckState state);
+    void sl_start_app_mode_checkbox_changed(Qt::CheckState state);
 
 private:
     Ui::MainWindow *ui;
@@ -88,6 +89,6 @@ private:
     int opc_period_reading_ = 2;
     bool tg_bot_auto_restart_ = false;
     bool app_auto_restart_ = false;
-
+    bool start_app_on_tray_ = false;
 };
 #endif // MAINWINDOW_H

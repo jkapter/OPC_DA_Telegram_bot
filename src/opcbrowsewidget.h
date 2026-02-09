@@ -10,6 +10,8 @@
 #include <QDialog>
 #include <QVBoxLayout>
 #include <QLineEdit>
+#include <QStyledItemDelegate>
+#include <QPainter>
 
 #include "copcclient.h"
 #include "opcdatamanager.h"
@@ -19,13 +21,15 @@ namespace Ui {
 class OpcBrowseWidget;
 }
 
+class OPCTagsViewerModel;
+
 class OpcBrowseWidget : public QWidget
 {
     Q_OBJECT
 
 public:
     explicit OpcBrowseWidget(OPC_HELPER::OPCDataManager* dm_ptr, QWidget *parent = nullptr);
-    ~OpcBrowseWidget();
+    virtual ~OpcBrowseWidget();
 
     void resizeEvent(QResizeEvent* event) override;
     void showEvent(QShowEvent* event) override;
@@ -37,7 +41,6 @@ signals:
 private slots:
     void sl_refresh_opc_tags_to_table(QTreeWidgetItem* cur, QTreeWidgetItem* last);
     void sl_tb_cleartagslist_clicked();
-    void sl_opc_table_tag_change_state_reading(QString,OPC_HELPER::TAG_STATUS,int);
     void sl_tb_refreshopclist_clicked();
     void sl_tb_refreshopctags_clicked();
     void sl_opc_servers_tree_widget_context_menu_requested(const QPoint& pos);
@@ -56,6 +59,7 @@ private:
     std::unordered_map<const QString*, std::vector<QString>> opc_server_to_tags_list_buffer_;
     std::unordered_map<const QString*, QMutex> opc_server_to_mutex_;
     std::unordered_map<const QString*, QTreeWidgetItem*> opc_server_to_tree_item_;
+    std::unordered_map<const QString*, OPCTagsViewerModel*> opc_server_to_table_model_;
 
     QTreeWidgetItem* selected_item_opc_tree_ = nullptr;
 
@@ -102,5 +106,38 @@ private:
     QLineEdit* le_value_;
 
 };
+
+class OPCTagsViewerModel: public QAbstractTableModel
+{
+    Q_OBJECT
+public:
+    OPCTagsViewerModel() = delete;
+    explicit OPCTagsViewerModel(const std::vector<QString>& tags, const QString& tag_prefix, OPC_HELPER::OPCDataManager& opc_manager, QObject* parent = nullptr);
+    int rowCount(const QModelIndex &parent) const override;
+    int columnCount(const QModelIndex &parent) const override;
+    QVariant data(const QModelIndex &index, int role) const override;
+    bool setData(const QModelIndex &index, const QVariant &value, int role) override;
+    QModelIndex index(int row, int column, const QModelIndex &parent) const override;
+    QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+    void reset();
+
+private:
+    OPC_HELPER::OPCDataManager& opc_manager_;
+    const std::vector<QString>& tags_;
+    QString tag_prefix_;
+};
+
+class SelectReadModeCheckBox: public QStyledItemDelegate
+{
+    Q_OBJECT
+public:
+    SelectReadModeCheckBox(qreal cb_indicator_size = 25, QObject* parent = nullptr) : QStyledItemDelegate(parent), cb_indicator_size_(cb_indicator_size) {}
+    virtual void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    virtual bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index) override;
+
+private:
+    qreal cb_indicator_size_;
+};
+
 
 #endif // OPCBROWSEWIDGET_H

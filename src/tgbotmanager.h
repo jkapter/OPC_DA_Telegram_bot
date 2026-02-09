@@ -44,7 +44,7 @@ class TgBotManager: public QObject
 public:
     explicit TgBotManager(const std::string& bot_token, OPC_HELPER::OPCDataManager& opc_manager);
     TgBotManager(OPC_HELPER::OPCDataManager& opc_manager);
-    ~TgBotManager();
+    virtual ~TgBotManager();
 
     bool BotIsWorking() const;
     void StartBot();

@@ -17,13 +17,15 @@ class TgBotSettingsWidget : public QWidget
 
 public:
     explicit TgBotSettingsWidget(TgBotManager* bot_manager, QWidget *parent = nullptr);
-    ~TgBotSettingsWidget();
+    virtual ~TgBotSettingsWidget();
 
 signals:
     void sg_change_auto_restart_app_checkbox(Qt::CheckState state);
+    void sg_change_start_app_mode_checkbox(Qt::CheckState state);
 
 public slots:
     void sl_set_autorestart_app_checkbox(bool b);
+    void sl_set_start_app_on_tray_checkbox(bool b);
 
 private slots:
     void sl_bot_status_changed();

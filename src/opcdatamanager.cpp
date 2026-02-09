@@ -3,7 +3,7 @@
 using namespace OPC_HELPER;
 using namespace Qt::StringLiterals;
 
-OPCDataManager::OPCDataManager()
+OPCDataManager::OPCDataManager() : QObject()
 {
     tag_name_check_re_.setPattern("^([^@]*)@([^@#].*)#(.*)$");
     RestoreDataFromFile();
@@ -37,7 +37,7 @@ OPCDataManager::~OPCDataManager() {
         qWarning() << "Автосохранение кофигурационных файлов OPCDataManager не удалось.";
     }
 
-    qInfo() << "OPCDataManager деструктор.";
+    qInfo() << "OPCDataManager деструктор завершен.";
 }
 
 TAG_STATUS OPCDataManager::CheckTagReadState(const QString& full_tag_name) const {
@@ -270,6 +270,7 @@ void OPCDataManager::ReadTagsOnce(std::vector<std::shared_ptr<OPCTag>>& tags)
     QThread* opc_thread_req = new QThread(this);
     QString thread_name = QString("ON_REQUEST_%1").arg(QDateTime::currentSecsSinceEpoch());
     opc_thread_req->setObjectName(thread_name);
+
     OPC_HELPER::OPCCLientOnRequest* opc_client_req = new OPC_HELPER::OPCCLientOnRequest(tags);
     QObject::connect(opc_client_req, SIGNAL(sg_send_message_to_console(QString)), this, SIGNAL(sg_send_message_to_console(QString)));
     QObject::connect(opc_client_req, SIGNAL(sg_opcclient_got_exception(QString)), this, SIGNAL(sg_send_message_to_console(QString)));
@@ -279,6 +280,7 @@ void OPCDataManager::ReadTagsOnce(std::vector<std::shared_ptr<OPCTag>>& tags)
     QObject::connect(opc_thread_req, SIGNAL(finished()), this, SLOT(sl_thread_on_request_finished()));
     QObject::connect(opc_thread_req, SIGNAL(started()), this, SLOT(sl_thread_on_request_started()));
     QObject::connect(opc_client_req, SIGNAL(sg_reading_complete(size_t)), this, SLOT(sl_thread_onrequest_reading_complete(size_t)));
+    QObject::connect(opc_thread_req, &QThread::finished, [opc_client_req] {delete opc_client_req;});
 
     opc_client_req->moveToThread(opc_thread_req);
     opc_thread_req->start();
@@ -430,6 +432,7 @@ void OPCDataManager::start_period_reading_()
     QObject::connect(this, SIGNAL(sg_stop_periodic_reading()), opc_client_per, SLOT(sl_stop()));
     QObject::connect(opc_client_per, SIGNAL(sg_reading_error(size_t)), this, SLOT(sl_thread_read_error(size_t)));
     QObject::connect(opc_client_per, SIGNAL(sg_reading_complete(size_t)), this, SLOT(sl_thread_period_reading_complete(size_t)));
+    QObject::connect(opc_thread_per, &QThread::finished, [opc_client_per] {delete opc_client_per;});
 
     opc_client_per->moveToThread(opc_thread_per);
     opc_thread_per->start();

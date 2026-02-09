@@ -16,7 +16,7 @@ class TGCommandConfigurationWidget : public QWidget
 
 public:
     explicit TGCommandConfigurationWidget(TgBotManager& tg_bot_manager, QWidget *parent = nullptr);
-    ~TGCommandConfigurationWidget();
+    virtual ~TGCommandConfigurationWidget();
 
 public slots:
     void sl_change_object_data(const std::string &current, const std::string &previous);

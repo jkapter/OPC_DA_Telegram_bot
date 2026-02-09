@@ -15,7 +15,7 @@ class TGMessageConfigurationWidget : public QWidget
 
 public:
     explicit TGMessageConfigurationWidget(TgBotManager& tg_bot_manager, QWidget *parent = nullptr);
-    ~TGMessageConfigurationWidget();
+    virtual ~TGMessageConfigurationWidget();
 
 public slots:
     void sl_change_object_data(const std::string &current, const std::string &previous);

@@ -13,7 +13,7 @@ class TgBotWorker: public QObject
 
 public:
     explicit TgBotWorker(TgBot::Bot* bot, QObject* parent = 0);
-    ~TgBotWorker();
+    virtual ~TgBotWorker();
 
 signals:
     void sg_emit_text_message(QString mes);

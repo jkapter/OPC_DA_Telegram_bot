@@ -53,7 +53,7 @@ OPCValuesViewer::~OPCValuesViewer()
 
 void OPCValuesViewer::set_column_widths_(QTableView* tbl) {
     if(!tbl) return;
-    int sum_width = tbl->horizontalHeader()->geometry().width();//(tbl->width() - 17) > 0 ? tbl->width() - 17 : tbl->width();
+    int sum_width = tbl->horizontalHeader()->geometry().width();
     int w1, w2, w3;
     if(sum_width >= 300) {
         w1 = (10*sum_width) / 100;
@@ -369,7 +369,7 @@ void OPCValuesViewerModel::sl_table_view_cell_double_clicked(const QModelIndex &
 void OPCValuesViewerModel::sl_tags_values_updated()
 {
     if(rowCount(QModelIndex()) == 0) return;
-    auto index_start = createIndex(0, 3);
+    auto index_start = createIndex(0, 2);
     auto index_end = createIndex(rowCount(QModelIndex()) - 1, 4);
     emit dataChanged(index_start, index_end, {Qt::DisplayRole});
 }

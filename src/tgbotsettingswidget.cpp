@@ -17,6 +17,7 @@ TgBotSettingsWidget::TgBotSettingsWidget(TgBotManager* bot_manager, QWidget *par
     QObject::connect(bot_manager_, SIGNAL(sg_bot_thread_state_changed()), this, SLOT(sl_bot_status_changed()));
     QObject::connect(bot_manager_, SIGNAL(sg_send_message_to_console(QString)), this, SLOT(sl_console_output_message(QString)));
     QObject::connect(ui->cbRestartAppOnError, SIGNAL(checkStateChanged(Qt::CheckState)), this, SIGNAL(sg_change_auto_restart_app_checkbox(Qt::CheckState)));
+    QObject::connect(ui->cbStartAppHiddenTray, SIGNAL(checkStateChanged(Qt::CheckState)), this, SIGNAL(sg_change_start_app_mode_checkbox(Qt::CheckState)));
     QObject::connect(ui->pbStartBot, SIGNAL(clicked(bool)), this, SLOT(sl_pb_startbot_clicked()));
     QObject::connect(ui->pbStopBot, SIGNAL(clicked(bool)), this, SLOT(sl_pb_stopbot_clicked()));
     QObject::connect(ui->cbAutoRestartbot, SIGNAL(stateChanged(int)), this, SLOT(sl_cb_autorestartbot_statechanged(int)));
@@ -42,6 +43,11 @@ TgBotSettingsWidget::~TgBotSettingsWidget()
 void TgBotSettingsWidget::sl_set_autorestart_app_checkbox(bool b)
 {
     ui->cbRestartAppOnError->setChecked(b);
+}
+
+void TgBotSettingsWidget::sl_set_start_app_on_tray_checkbox(bool b)
+{
+    ui->cbStartAppHiddenTray->setChecked(b);
 }
 
 void TgBotSettingsWidget::resizeEvent(QResizeEvent* event) {

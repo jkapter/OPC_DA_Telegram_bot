@@ -15,7 +15,7 @@ class OPCTagPostProcessingWidget : public QDialog
 
 public:
     explicit OPCTagPostProcessingWidget(std::shared_ptr<OPC_HELPER::OPCTag> tag, QWidget *parent = nullptr);
-    ~OPCTagPostProcessingWidget();
+    virtual ~OPCTagPostProcessingWidget();
 
 protected:
     void resizeEvent(QResizeEvent *event) override;

@@ -16,7 +16,7 @@ class TGInlineButtonsConfigurationWidget : public QWidget
 
 public:
     explicit TGInlineButtonsConfigurationWidget(TgBotManager& tg_bot_manager, QWidget *parent = nullptr);
-    ~TGInlineButtonsConfigurationWidget();
+    virtual ~TGInlineButtonsConfigurationWidget();
 
 public slots:
     void sl_change_object_data(const std::string &current, const std::string &previous);

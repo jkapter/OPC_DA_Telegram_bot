@@ -71,7 +71,9 @@ MainWindow::MainWindow(TgBotManager* bot_manager, OPC_HELPER::OPCDataManager* op
     TgBotSettingsWidget* tg_settings_wdg = new TgBotSettingsWidget(&(*tg_bot_manager_), this);
     ui->swAppPages->addWidget(tg_settings_wdg);
     QObject::connect(tg_settings_wdg, SIGNAL(sg_change_auto_restart_app_checkbox(Qt::CheckState)), this, SLOT(sl_auto_restart_app_checkbox_changed(Qt::CheckState)));
+    QObject::connect(tg_settings_wdg, SIGNAL(sg_change_start_app_mode_checkbox(Qt::CheckState)), this, SLOT(sl_start_app_mode_checkbox_changed(Qt::CheckState)));
     tg_settings_wdg->sl_set_autorestart_app_checkbox(app_auto_restart_);
+    tg_settings_wdg->sl_set_start_app_on_tray_checkbox(start_app_on_tray_);
 
     TgBotConfigurationWidget* tg_config_wdg = new TgBotConfigurationWidget(tg_bot_manager_, this);
     ui->swAppPages->addWidget(tg_config_wdg);
@@ -103,6 +105,7 @@ MainWindow::MainWindow(TgBotManager* bot_manager, OPC_HELPER::OPCDataManager* op
     ui->lbMainMenu4->setVisible(false);
     ui->lbMainMenu5->setVisible(false);
     ui->lbMainMenu6->setVisible(false);
+
 }
 
 void MainWindow::showTrayIcon()
@@ -268,6 +271,7 @@ bool MainWindow::write_settings_to_file_(const QString& folder_path) const {
     temp_obj.insert("opc_period_reading", opc_data_manager_->GetPeriodReading());
     temp_obj.insert("auto_restart_bot", tg_bot_manager_->IsAutoRestart());
     temp_obj.insert("auto_restart_application", app_auto_restart_);
+    temp_obj.insert("start_application_on_tray", start_app_on_tray_);
 
     QJsonDocument output_doc(temp_obj);
 
@@ -365,6 +369,15 @@ bool MainWindow::read_settings_() {
         return false;
     }
 
+    if(input_doc.object().contains("start_application_on_tray") && input_doc.object().value("start_application_on_tray").isBool()) {
+        start_app_on_tray_ = input_doc.object().value("start_application_on_tray").toBool();
+    } else {
+
+        qWarning() << QString("Файл настроек settings.json: нет флага старта приложения");
+
+        return false;
+    }
+
     return true;
 }
 
@@ -457,5 +470,10 @@ void MainWindow::sl_restart_app_cmd(bool auto_restart)
 void MainWindow::sl_auto_restart_app_checkbox_changed(Qt::CheckState state)
 {
     app_auto_restart_ = state == Qt::Checked;
+}
+
+void MainWindow::sl_start_app_mode_checkbox_changed(Qt::CheckState state)
+{
+    start_app_on_tray_ = state == Qt::Checked;
 }
 

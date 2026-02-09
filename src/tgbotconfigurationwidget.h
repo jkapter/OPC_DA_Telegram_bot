@@ -30,7 +30,7 @@ class TgBotConfigurationWidget : public QWidget
 
 public:
     explicit TgBotConfigurationWidget(TgBotManager* bot_manager, QWidget *parent = nullptr);
-    ~TgBotConfigurationWidget();
+    virtual ~TgBotConfigurationWidget();
 
 private slots:
 

@@ -26,7 +26,7 @@ class OPCValuesViewer : public QWidget
 
 public:
     explicit OPCValuesViewer(OPC_HELPER::OPCDataManager* dm_ptr, QWidget *parent = nullptr);
-    ~OPCValuesViewer();
+    virtual ~OPCValuesViewer();
 
     void resizeEvent(QResizeEvent* event) override;
     void showEvent(QShowEvent* event) override;

@@ -56,7 +56,7 @@ class COPCClient : public QObject {
     Q_OBJECT
 public:
     COPCClient();
-    ~COPCClient();
+    virtual ~COPCClient();
 
     const std::set<QString>& GetOPCServerNames(const QString& hostname);
     const std::vector<QString>& GetOPCTagsNames(const QString& hostname, const QString& server_name, int notify_of_portion = 50);

@@ -32,8 +32,8 @@ class OPCDataManager: public QObject
     Q_OBJECT
 public:
     OPCDataManager();
-    ~OPCDataManager();
-    TAG_STATUS CheckTagReadState(const QString& tag_name) const;
+    virtual ~OPCDataManager();
+    TAG_STATUS CheckTagReadState(const QString& full_tag_name) const;
     size_t AddTagToPeriodicReadList(const QString& hostname, const QString& server_name, const QString& tag_name);
     size_t AddTagToPeriodicReadList(const QString& full_tag_name);
     size_t DeleteTagFromPeriodicRead(const QString& tag_name);

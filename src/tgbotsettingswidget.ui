@@ -35,7 +35,7 @@
    <item>
     <widget class="QTabWidget" name="tabBotSettings">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tabBotManage">
       <attribute name="title">
@@ -105,18 +105,12 @@
           <property name="verticalSpacing">
            <number>10</number>
           </property>
-          <item row="0" column="2">
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Orientation::Horizontal</enum>
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="cbAutoRestartbot">
+            <property name="text">
+             <string>Автоматический рестарт бота</string>
             </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
+           </widget>
           </item>
           <item row="0" column="1">
            <widget class="QPushButton" name="pbStartBot">
@@ -131,25 +125,18 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QPushButton" name="pbStopBot">
-            <property name="minimumSize">
+          <item row="0" column="2">
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
              <size>
-              <width>0</width>
-              <height>30</height>
+              <width>40</width>
+              <height>20</height>
              </size>
             </property>
-            <property name="text">
-             <string>Остановить бота</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QCheckBox" name="cbAutoRestartbot">
-            <property name="text">
-             <string>Автоматический рестарт бота</string>
-            </property>
-           </widget>
+           </spacer>
           </item>
           <item row="0" column="0">
            <widget class="QLabel" name="lbBotStatus">
@@ -188,10 +175,30 @@
             </property>
            </widget>
           </item>
+          <item row="1" column="1">
+           <widget class="QPushButton" name="pbStopBot">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Остановить бота</string>
+            </property>
+           </widget>
+          </item>
           <item row="2" column="0">
            <widget class="QCheckBox" name="cbRestartAppOnError">
             <property name="text">
              <string>Перезапуск приложения при отсутствии соединения ОРС</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QCheckBox" name="cbStartAppHiddenTray">
+            <property name="text">
+             <string>Запускать приложение свернутым в трей</string>
             </property>
            </widget>
           </item>

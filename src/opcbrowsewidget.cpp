@@ -10,12 +10,9 @@ OpcBrowseWidget::OpcBrowseWidget(OPC_HELPER::OPCDataManager* dm_ptr, QWidget *pa
 {
     ui->setupUi(this);
 
-    QTableWidget* opc_table_tags = ui->tblOPCTags;
-
-    opc_table_tags->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    opc_table_tags->setColumnCount(2);
-    opc_table_tags->setHorizontalHeaderItem(0, new QTableWidgetItem("Имя тэга"));
-    opc_table_tags->setHorizontalHeaderItem(1, new QTableWidgetItem("Контроль\nизменения"));
+    ui->tblvOPCTags->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    ui->tblvOPCTags->setItemDelegateForColumn(1, new SelectReadModeCheckBox(25, this));
+    ui->tblvOPCTags->setSelectionMode(QAbstractItemView::NoSelection);
 
     QObject::connect(ui->twOPCServers, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(sl_refresh_opc_tags_to_table(QTreeWidgetItem*,QTreeWidgetItem*)));
     QObject::connect(ui->tbClearTagsList, SIGNAL(clicked(bool)), this, SLOT(sl_tb_cleartagslist_clicked()));
@@ -52,6 +49,7 @@ OpcBrowseWidget::OpcBrowseWidget(OPC_HELPER::OPCDataManager* dm_ptr, QWidget *pa
             auto [serv_it, b] = host_to_opc_servers_.at(&host).insert(it);
             if(b) {
                 opc_server_to_mutex_[&(*serv_it)];
+                opc_server_to_table_model_[&(*serv_it)] = nullptr;
             }
         }
     }
@@ -69,12 +67,12 @@ OpcBrowseWidget::~OpcBrowseWidget()
 }
 
 void OpcBrowseWidget::opctable_set_column_widths_() {
-    QTableWidget* opc_table_tags = ui->tblOPCTags;
+    QTableView* opc_table_tags = ui->tblvOPCTags;
 
     int w_header = opc_table_tags->horizontalHeader()->geometry().width();
-    w_header -= 5;
+    if(w_header <= 0) return;
 
-    int n_col = opc_table_tags->columnCount();
+    int n_col = 2;
     int w_btns_cols = w_header > 300 ? (60 * n_col) : w_header / 2;
 
     for(int i = 0; i < n_col; ++i) {
@@ -84,6 +82,7 @@ void OpcBrowseWidget::opctable_set_column_widths_() {
             opc_table_tags->setColumnWidth(i, w_btns_cols/(n_col-1));
         }
     }
+    ui->tblvOPCTags->repaint();
 }
 
 void OpcBrowseWidget::resizeEvent(QResizeEvent* event) {
@@ -144,6 +143,7 @@ void OpcBrowseWidget::fill_tags_list_(const QString& hostname, const QString& se
         QObject::connect(opc_thread, &QThread::finished, this, [this](){--opc_threads_count_;});
         QObject::connect(browser, SIGNAL(sg_get_part_tag_names_from_server(const QString&,const QString&,size_t)), this, SLOT(sl_browser_get_part_tags(const QString&,const QString&,size_t)));
         QObject::connect(browser, SIGNAL(sg_get_all_tag_names_from_server(const QString&,const QString&,size_t)), this, SLOT(sl_browser_get_all_tags(const QString&,const QString&,size_t)));
+        QObject::connect(opc_thread, &QThread::finished, [browser] {delete browser;});
 
         browser->moveToThread(opc_thread);
         opc_thread->start();
@@ -158,35 +158,17 @@ void OpcBrowseWidget::fill_tags_list_(const QString& hostname, const QString& se
         return;
     }
 
-    QTableWidget* opc_table = ui->tblOPCTags;
+    QTableView* opc_table_v = ui->tblvOPCTags;
     QGuiApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
     QMutexLocker locker(&opc_server_to_mutex_.at(&(*server_it)));
     const std::vector<QString>& tag_list = opc_server_to_tags_list_buffer_.at(&(*server_it));
 
-    opc_table->clearContents();
-    int i = 0;
-    opc_table->setRowCount(tag_list.size());
-
-    for(const auto& tag: tag_list) {
-        QTableWidgetItem* tag_item_widget = new QTableWidgetItem(tag);
-        tag_item_widget->setFlags(Qt::NoItemFlags);
-        opc_table->setItem(i++, 0, tag_item_widget);
-
-        QString full_tag_name = QString("%1@%2#%3").arg(hostname, server_name, tag);
-
-        OPC_HELPER::TAG_STATUS tag_status = opc_data_manager_->CheckTagReadState(full_tag_name);
-
-        int tag_per_state = 0;
-        if(tag_status == OPC_HELPER::TAG_STATUS::PERIODIC_READ || tag_status == OPC_HELPER::TAG_STATUS::READ_BOTH) {
-            tag_per_state = 1;
-        }
-
-        OPCCheckBoxTableItem* item_to_perodic_read = new OPCCheckBoxTableItem(full_tag_name, OPC_HELPER::TAG_STATUS::PERIODIC_READ, tag_per_state, this);
-        QObject::connect(item_to_perodic_read, SIGNAL(sg_change_state(QString,OPC_HELPER::TAG_STATUS,int)), this, SLOT(sl_opc_table_tag_change_state_reading(QString,OPC_HELPER::TAG_STATUS,int)));
-        opc_table->setCellWidget(i-1, 1, item_to_perodic_read);
+    if(!opc_server_to_table_model_.at(&(*server_it))) {
+        opc_server_to_table_model_.at(&(*server_it)) = new OPCTagsViewerModel(tag_list, QString("%1@%2").arg(*host_it, *server_it), *opc_data_manager_, this);
     }
+    opc_table_v->setModel(opc_server_to_table_model_.at(&(*server_it)));
+
     QGuiApplication::restoreOverrideCursor();
-    opc_table->repaint();
     opctable_set_column_widths_();
 }
 
@@ -195,26 +177,14 @@ void OpcBrowseWidget::sl_refresh_opc_tags_to_table(QTreeWidgetItem* cur, QTreeWi
     if(cur && cur->parent()) {
         QString host = cur->parent()->text(0) == u"Этот компьютер"_s ? u"localhost"_s : cur->parent()->text(0);
         fill_tags_list_(host, cur->text(0));
+        opctable_set_column_widths_();
     }
-}
-
-void OpcBrowseWidget::sl_opc_table_tag_change_state_reading(QString tag, OPC_HELPER::TAG_STATUS st, int state) {
-    if(st == OPC_HELPER::TAG_STATUS::PERIODIC_READ || st == OPC_HELPER::TAG_STATUS::READ_BOTH) {
-        if(state == 2) {
-            opc_data_manager_->AddTagToPeriodicReadList(tag);
-        } else {
-            opc_data_manager_->DeleteTagFromPeriodicRead(tag);
-        }
-    };
 }
 
 void OpcBrowseWidget::sl_tb_cleartagslist_clicked()
 {
     opc_data_manager_->ClearMonitoringTags();
-    if(ui->twOPCServers->currentItem() && ui->twOPCServers->currentItem()->parent()) {
-        fill_tags_list_(ui->twOPCServers->currentItem()->parent()->text(0) == u"Этот компьютер"_s ? u"localhost"_s : ui->twOPCServers->currentItem()->parent()->text(0),
-                        ui->twOPCServers->currentItem()->text(0));
-    }
+    ui->tblvOPCTags->repaint();
 }
 
 void OpcBrowseWidget::sl_tb_refreshopclist_clicked()
@@ -223,6 +193,7 @@ void OpcBrowseWidget::sl_tb_refreshopclist_clicked()
     QThread::currentThread()->eventDispatcher()->processEvents(QEventLoop::AllEvents);
 
     ui->twOPCServers->clear();
+    ui->tblvOPCTags->setModel(nullptr);
 
     host_to_opc_servers_.clear();
     opc_server_to_tree_item_.clear();
@@ -235,13 +206,11 @@ void OpcBrowseWidget::sl_tb_refreshopclist_clicked()
             auto [serv_it, b] = host_to_opc_servers_.at(&it).insert(server);
             if(b) {
                 opc_server_to_mutex_[&(*serv_it)];
+                opc_server_to_table_model_[&(*serv_it)] = nullptr;
             }
         }
     }
     fill_opc_list_();
-    ui->tblOPCTags->clear();
-    ui->tblOPCTags->setHorizontalHeaderItem(0, new QTableWidgetItem("Имя тэга"));
-    ui->tblOPCTags->setHorizontalHeaderItem(1, new QTableWidgetItem("Контроль\nизменения"));
 }
 
 void OpcBrowseWidget::sl_tb_refreshopctags_clicked()
@@ -257,6 +226,11 @@ void OpcBrowseWidget::sl_tb_refreshopctags_clicked()
         if(server_it == host_to_opc_servers_.at(&(*host_it)).end()) return;
 
         opc_server_to_tags_list_buffer_.erase(&(*server_it));
+        ui->tblvOPCTags->setModel(nullptr);
+        if(opc_server_to_table_model_.at(&(*server_it))) {
+            opc_server_to_table_model_.at(&(*server_it))->deleteLater();
+            opc_server_to_table_model_.at(&(*server_it)) = nullptr;
+        }
         fill_tags_list_(*host_it, *server_it);
     }
 }
@@ -296,11 +270,17 @@ void OpcBrowseWidget::sl_delete_opc_server_from_tree()
     if(selected_item_opc_tree_ && !selected_item_opc_tree_->parent() && selected_item_opc_tree_->text(0) != u"Этот компьютер"_s) {
         emit sg_stop_browsing_tags();
         auto host_it = host_names_.find(selected_item_opc_tree_->text(0));
+        ui->tblvOPCTags->setModel(nullptr);
+
         for(auto& it: host_to_opc_servers_.at(&(*host_it))) {
             while(!opc_server_to_mutex_.at(&it).tryLock(50)){};
             opc_server_to_mutex_.at(&it).unlock();
             opc_server_to_tags_list_buffer_.erase(&it);
             opc_server_to_mutex_.erase(&it);
+            if(opc_server_to_table_model_.at(&it)) {
+                opc_server_to_table_model_.at(&it)->deleteLater();
+                opc_server_to_table_model_.at(&it) = nullptr;
+            }
         }
         host_to_opc_servers_.erase(&(*host_it));
         host_names_.erase(host_it);
@@ -319,6 +299,7 @@ void OpcBrowseWidget::sl_add_new_host_to_tree(const QString& hostname)
             auto [serv_it, b] = host_to_opc_servers_.at(&(*host_it)).insert(it);
             if(b) {
                 opc_server_to_mutex_[&(*serv_it)];
+                opc_server_to_table_model_[&(*serv_it)] = nullptr;
             }
         }
         fill_opc_list_();
@@ -355,6 +336,7 @@ void OpcBrowseWidget::sl_browser_get_all_tags(const QString& hostname, const QSt
                                              .arg(server_name, hostname));
         ui->twOPCServers->setCurrentItem(opc_server_to_tree_item_.at(&(*server_it)));
         fill_tags_list_(hostname, server_name);
+        opctable_set_column_widths_();
     }
 }
 
@@ -386,7 +368,7 @@ void OPCCheckBoxTableItem::SetCheckBoxState(bool state) {
 }
 
 //===============================================================
-//================ OPCAddServerDialog =========================
+//================ OPCAddServerDialog ===========================
 //===============================================================
 
 OPCAddHostDialog::OPCAddHostDialog(QWidget *parent)
@@ -417,4 +399,140 @@ void OPCAddHostDialog::sl_ok_pressed()
         emit sg_add_new_host(le_value_->text());
     }
     close();
+}
+
+//===============================================================
+//================ OPCTagsViewerModel ===========================
+//===============================================================
+
+OPCTagsViewerModel::OPCTagsViewerModel(const std::vector<QString>& tags, const QString& tag_prefix, OPC_HELPER::OPCDataManager& opc_manager, QObject *parent)
+    : QAbstractTableModel(parent)
+    , opc_manager_(opc_manager)
+    , tags_(tags)
+    , tag_prefix_(tag_prefix)
+{
+
+}
+
+int OPCTagsViewerModel::rowCount(const QModelIndex &parent) const
+{
+    return tags_.size();
+}
+
+int OPCTagsViewerModel::columnCount(const QModelIndex &parent) const
+{
+    return 2;
+}
+
+QVariant OPCTagsViewerModel::data(const QModelIndex &index, int role) const
+{
+    if(!index.isValid()) return {};
+
+    if(role == Qt::DisplayRole && index.column() == 0) {
+        if(index.row() < tags_.size()) {
+            return tags_.at(index.row());
+        } else {
+            return {};
+        }
+    }
+
+    if(role == Qt::DisplayRole && index.column() == 1) {
+        auto tag_status = opc_manager_.CheckTagReadState(QString("%1#%2").arg(tag_prefix_, tags_.at(index.row())));
+        return tag_status == OPC_HELPER::TAG_STATUS::PERIODIC_READ || tag_status == OPC_HELPER::TAG_STATUS::READ_BOTH;
+    }
+
+    if(role == Qt::BackgroundRole) {
+        return {};
+    }
+
+    if(role == Qt::TextAlignmentRole) {
+        if(index.column() == 0) {
+            return Qt::AlignLeft;
+        }
+        return Qt::AlignCenter;
+    }
+    return {};
+}
+
+bool OPCTagsViewerModel::setData(const QModelIndex& index, const QVariant& value, int role)
+{
+    if (!index.isValid()) return false;
+
+    if(index.column() == 1 && index.row() < tags_.size())
+    {
+        QString full_tag_name = QString("%1#%2").arg(tag_prefix_, tags_.at(index.row()));
+        if(value.toBool()) {
+            opc_manager_.AddTagToPeriodicReadList(full_tag_name);
+        } else {
+            opc_manager_.DeleteTagFromPeriodicRead(full_tag_name);
+        }
+        return true;
+    }
+    return false;
+}
+
+QModelIndex OPCTagsViewerModel::index(int row, int column, const QModelIndex &parent) const
+{
+    if(row >=0 && row < static_cast<int>(tags_.size()) && column >=0 && column < 2) {
+        return createIndex(row, column);
+    }
+    return QModelIndex();
+}
+
+QVariant OPCTagsViewerModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    if(role == Qt::DisplayRole && orientation == Qt::Horizontal) {
+        switch(section) {
+        case 0: return QString("Имя тэга");
+        case 1: return QString("Контроль\nизменения");
+        }
+    }
+    if(role == Qt::DisplayRole && orientation == Qt::Vertical) {
+        return section + 1;
+    }
+
+    if(role == Qt::TextAlignmentRole) {
+        return Qt::AlignCenter;
+    }
+
+    return {};
+}
+
+void OPCTagsViewerModel::reset()
+{
+    QAbstractTableModel::beginResetModel();
+    QAbstractTableModel::endResetModel();
+}
+
+
+//===================================================================
+//================ SelectReadModeCheckBox ===========================
+//===================================================================
+
+void SelectReadModeCheckBox::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    if (index.column() == 1) {
+        painter->save();
+        QCheckBox cb_prototype;
+        cb_prototype.setChecked(index.data().toBool());
+        const qreal x = option.rect.center().x() - cb_indicator_size_ / 2;
+        const qreal y = option.rect.center().y() - cb_indicator_size_ / 2;
+        painter->translate(QPointF(x, y));
+        cb_prototype.render(painter);
+        painter->restore();
+    } else {
+        QStyledItemDelegate::paint(painter, option, index);
+    }
+}
+
+bool SelectReadModeCheckBox::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index)
+{
+
+    if(event->type() == QEvent::MouseButtonRelease)
+    {
+        model->setData(index, !model->data(index).toBool());
+        event->accept();
+        return true;
+    }
+    return false;
 }

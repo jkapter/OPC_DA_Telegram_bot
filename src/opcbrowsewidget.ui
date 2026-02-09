@@ -235,13 +235,6 @@
         </layout>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QTableWidget" name="tblOPCTags">
-        <property name="styleSheet">
-         <string notr="true"/>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="0">
        <widget class="QTreeWidget" name="twOPCServers">
         <property name="rootIsDecorated">
@@ -290,6 +283,9 @@
          </item>
         </item>
        </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QTableView" name="tblvOPCTags"/>
       </item>
      </layout>
     </widget>

@@ -120,7 +120,8 @@ void TgBotUser::UpdateData(TgBot::Message::Ptr message) {
 //===============================================================
 
 TgBotManager::TgBotManager(const std::string& bot_token, OPC_HELPER::OPCDataManager& opc_manager)
-    : bot_token_(bot_token)
+    : QObject()
+    , bot_token_(bot_token)
     , check_events_timer_(new QTimer(this))
     , check_restart_timer_(new QTimer(this))
 {
@@ -750,12 +751,11 @@ void TgBotManager::StartBot() {
         QObject::connect(bot_worker, SIGNAL(sg_emit_text_message(QString)), this, SIGNAL(sg_send_message_to_console(QString)));
         QObject::connect(bot_worker, SIGNAL(sg_emit_exception(QString)), this, SLOT(sl_bot_throw_exception(QString)));
         QObject::connect(bot_worker, SIGNAL(sg_finished()), bot_thread, SLOT(quit()));
-        QObject::connect(bot_thread, SIGNAL(finished()), bot_thread, SLOT(deleteLater()));
+        QObject::connect(bot_thread, SIGNAL(finished()), bot_thread, SLOT(deleteLater()), Qt::QueuedConnection);
         QObject::connect(bot_thread, SIGNAL(finished()), this, SLOT(sl_bot_finished()), Qt::QueuedConnection);
         QObject::connect(bot_thread, SIGNAL(finished()), this, SIGNAL(sg_bot_thread_state_changed()), Qt::QueuedConnection);
-
-
         QObject::connect(this, SIGNAL(sg_stop_bot_thread()), bot_worker, SLOT(sl_stop_bot()));
+        QObject::connect(bot_thread, &QThread::finished, [bot_worker] {delete bot_worker;});
 
         bot_started_ = true;
 
