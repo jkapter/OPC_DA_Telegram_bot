@@ -34,6 +34,7 @@ public:
     virtual ~MainWindow();
 
     static int const EXIT_CODE_REBOOT;
+    static int const EXIT_CODE_USER_CMD;
 
 protected:
     void closeEvent(QCloseEvent * event) override;

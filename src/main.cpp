@@ -78,10 +78,10 @@ int main(int argc, char *argv[])
 
         exit_code = app.exec();
 
-        if(exit_code == MainWindow::EXIT_CODE_REBOOT) {
+        if(exit_code != MainWindow::EXIT_CODE_USER_CMD) {
             QThread::currentThread()->sleep(5);
         }
-    } while(exit_code == MainWindow::EXIT_CODE_REBOOT);
+    } while(exit_code != MainWindow::EXIT_CODE_USER_CMD);
 
     return exit_code;
 }

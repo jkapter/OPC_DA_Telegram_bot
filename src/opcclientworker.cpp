@@ -100,12 +100,17 @@ void OPCCLientPeriodic::sl_process()
                 }
             }
 
-            auto duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_tick);
-            while(!request_interrupt_ && duration_ms < std::chrono::milliseconds{period_*1000}) {
-                QThread::currentThread()->eventDispatcher()->processEvents(QEventLoop::AllEvents);
-                QThread::currentThread()->sleep(std::chrono::nanoseconds{100000});
-                duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_tick);
+            auto duration_ms = std::chrono::milliseconds{period_*1000} - std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_tick);
+            if(duration_ms > 0) {
+                QThread::currentThread()->eventDispatcher()->processEvents(QEventLoop::ExcludeUserInputEvents | QEventLoop::ExcludeSocketNotifiers);
+
             }
+            /*while(!request_interrupt_ && duration_ms < std::chrono::milliseconds{period_*1000}) {
+
+                QThread::currentThread()->eventDispatcher()->processEvents(QEventLoop::AllEvents);
+                //QThread::currentThread()->sleep(std::chrono::nanoseconds{100000});
+                duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_tick);
+            }*/
         }
     } catch (std::exception& e) {
         emit sg_opcclient_got_exception(QString::fromStdString(e.what()));

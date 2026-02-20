@@ -296,6 +296,7 @@ bool TgBotManager::BanUser(int64_t user_id) {
 
 void TgBotManager::make_admin_tools_() {
     admin_tools_to_callback_.clear();
+    server_to_sample_and_nomber_tag_.clear();
 
     for(const auto& tag: tg_parent_->OPCManager()->GetPeriodicTags()) {
         if(server_to_sample_and_nomber_tag_.count(tag->GetServerName()) == 0) {
@@ -799,6 +800,7 @@ void TgBotManager::sl_bot_started()
     emit sg_send_message_to_console(QString("Бот запущен."));
     check_events_timer_->setInterval(CHECK_EVENTS_PERIOD_);
     check_events_timer_->start();
+    error_message_.reset(nullptr);
 }
 
 

@@ -2,6 +2,7 @@
 #include "./ui_mainwindow.h"
 
 int const MainWindow::EXIT_CODE_REBOOT = 8888;
+int const MainWindow::EXIT_CODE_USER_CMD = 8887;
 
 MainWindow::~MainWindow()
 {
@@ -159,7 +160,7 @@ void MainWindow::setTrayIconActions()
 void MainWindow::sl_close_app_from_tray() {
     bFirstClosed_ = true;
     close();
-    qApp->quit();
+    qApp->exit(EXIT_CODE_USER_CMD);
 }
 
 void MainWindow::changeEvent(QEvent *event)
