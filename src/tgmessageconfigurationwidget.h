@@ -3,7 +3,10 @@
 
 #include <QWidget>
 
-#include "selectitemstablewigget.h"
+class TgBotManager;
+class SelectItemsTableWidget;
+class TGMessage;
+class QTableWidget;
 
 namespace Ui {
 class TGMessageConfigurationWidget;

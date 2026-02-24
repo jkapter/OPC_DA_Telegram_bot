@@ -42,26 +42,25 @@ set(PROJECT_SOURCES
 )
 
 qt_add_executable(OPCDATgBot ${PROJECT_SOURCES}
+    opctag.h opctag.cpp
+    logger.h logger.cpp
+    opcdatamanager.h opcdatamanager.cpp
+    opcclientworker.h opcclientworker.cpp
+    copcclient.h copcclient.cpp
+    tgobject.h tgobject.cpp
+    tgbotmanager.h tgbotmanager.cpp
+    tgbotthreadwrapper.h tgbotthreadwrapper.cpp
     res.qrc
     ${app_icon_resource_windows}
     ../styles/styles.qss
-    tgbotthreadwrapper.h tgbotthreadwrapper.cpp
-    copcclient.h
-    copcclient.cpp
     opcbrowsewidget.h opcbrowsewidget.cpp opcbrowsewidget.ui
-    opcdatamanager.h opcdatamanager.cpp
     opcvaluesviewer.h opcvaluesviewer.cpp opcvaluesviewer.ui
-    opctag.h opctag.cpp
-    opcclientworker.h opcclientworker.cpp
-    tgbotmanager.h tgbotmanager.cpp
     tgbotsettingswidget.h tgbotsettingswidget.cpp tgbotsettingswidget.ui
     plaintextconsole.cpp plaintextconsole.h
     hintinputdialog.cpp hintinputdialog.h
-    tgobject.h tgobject.cpp
     tgbotconfigurationwidget.h tgbotconfigurationwidget.cpp tgbotconfigurationwidget.ui
     selectitemstablewigget.h selectitemstablewigget.cpp
     opctagpostprocessingwidget.h opctagpostprocessingwidget.cpp opctagpostprocessingwidget.ui
-    logger.h logger.cpp
     tgmessageconfigurationwidget.h tgmessageconfigurationwidget.cpp tgmessageconfigurationwidget.ui
     tgcommandconfigurationwidget.h tgcommandconfigurationwidget.cpp tgcommandconfigurationwidget.ui
     tginlinebuttonsconfigurationwidget.h tginlinebuttonsconfigurationwidget.cpp tginlinebuttonsconfigurationwidget.ui

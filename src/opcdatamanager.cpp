@@ -1,23 +1,30 @@
 #include "opcdatamanager.h"
 
+#include <QRegularExpression>
+#include <QTimer>
+#include <QDir>
+#include <QDebug>
+#include <QApplication>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QJsonDocument>
+
+#include "opcclientworker.h"
+#include "opctag.h"
+
 using namespace OPC_HELPER;
 using namespace Qt::StringLiterals;
 
-OPCDataManager::OPCDataManager() : QObject()
+OPCDataManager::OPCDataManager()
+    : QObject()
 {
     tag_name_check_re_.setPattern("^([^@]*)@([^@#].*)#(.*)$");
     RestoreDataFromFile();
     QTimer::singleShot(50, this, [this](){emit sg_set_text_state("OPC клиент остановлен");});
+
 }
 
 OPCDataManager::~OPCDataManager() {
-    emit sg_stop_periodic_reading();
-    request_stop_periodic_reading_ = true;
-    QTimer::singleShot(TIME_WAITING_THREAD_*1000, this, [this](){period_reading_on_ = false; opc_threads_on_request_count_ = 0;});
-    while(period_reading_on_ || opc_threads_on_request_count_ > 0) {
-        QThread::currentThread()->eventDispatcher()->processEvents(QEventLoop::AllEvents);
-    }
-
     QDir app_dir(qApp->applicationDirPath());
     bool autosave_flag = app_dir.exists("autosave");
     if(!autosave_flag) {
@@ -35,6 +42,18 @@ OPCDataManager::~OPCDataManager() {
         SaveDataToFile(path);
     } else {
         qWarning() << "Автосохранение кофигурационных файлов OPCDataManager не удалось.";
+    }
+
+    if(opc_threads_on_request_count_ > 0 || period_reading_on_) {
+        emit sg_stop_reading();
+        QTimer::singleShot(TIME_WAITING_THREAD_, this,
+                           [this](){
+                               opc_threads_on_request_count_ = 0;
+                               period_reading_on_ = false;
+                            });
+        while(opc_threads_on_request_count_ > 0 || period_reading_on_) {
+            QThread::currentThread()->eventDispatcher()->processEvents(QEventLoop::ExcludeUserInputEvents | QEventLoop::ExcludeSocketNotifiers);
+        }
     }
 
     qInfo() << "OPCDataManager деструктор завершен.";
@@ -260,42 +279,90 @@ int OPCDataManager::GetPeriodReading() const
 
 void OPCDataManager::SetPeriodReading(int period)
 {
-    opc_period_reading_ = period;
-    emit sg_set_period_reading(period);
+    opc_period_reading_ = period > 0 ? period : opc_period_reading_;
     qInfo() << QString("OPCDataManager изменен период чтения, новое значение %1.").arg(period);
 }
 
 void OPCDataManager::ReadTagsOnce(std::vector<std::shared_ptr<OPCTag>>& tags)
 {
-    QThread* opc_thread_req = new QThread(this);
-    QString thread_name = QString("ON_REQUEST_%1").arg(QDateTime::currentSecsSinceEpoch());
-    opc_thread_req->setObjectName(thread_name);
+    QThread* thread_req = new QThread();
+    OPC_HELPER::OPCDAWorker* worker = new OPC_HELPER::OPCDAWorker();
 
-    OPC_HELPER::OPCCLientOnRequest* opc_client_req = new OPC_HELPER::OPCCLientOnRequest(tags);
-    QObject::connect(opc_client_req, SIGNAL(sg_send_message_to_console(QString)), this, SIGNAL(sg_send_message_to_console(QString)));
-    QObject::connect(opc_client_req, SIGNAL(sg_opcclient_got_exception(QString)), this, SIGNAL(sg_send_message_to_console(QString)));
-    QObject::connect(opc_thread_req, SIGNAL(started()), opc_client_req, SLOT(sl_process()));
-    QObject::connect(opc_client_req, SIGNAL(sg_finished()), opc_thread_req, SLOT(quit()));
-    QObject::connect(opc_thread_req, SIGNAL(finished()), opc_thread_req, SLOT(deleteLater()));
-    QObject::connect(opc_thread_req, SIGNAL(finished()), this, SLOT(sl_thread_on_request_finished()));
-    QObject::connect(opc_thread_req, SIGNAL(started()), this, SLOT(sl_thread_on_request_started()));
-    QObject::connect(opc_client_req, SIGNAL(sg_reading_complete(size_t)), this, SLOT(sl_thread_onrequest_reading_complete(size_t)));
-    QObject::connect(opc_thread_req, &QThread::finished, [opc_client_req] {delete opc_client_req;});
+    worker->SetTagsList(tags);
+    worker->moveToThread(thread_req);
 
-    opc_client_req->moveToThread(opc_thread_req);
-    opc_thread_req->start();
+    QObject::connect(thread_req, SIGNAL(finished()), worker, SLOT(deleteLater()));
+    QObject::connect(thread_req, SIGNAL(finished()), thread_req, SLOT(deleteLater()));
+    QObject::connect(thread_req, SIGNAL(finished()), this, SLOT(sl_on_request_thread_finished()));
+    QObject::connect(thread_req, SIGNAL(started()), worker, SLOT(sl_process()));
+    QObject::connect(worker, SIGNAL(sg_finished()), thread_req, SLOT(quit()));
+    QObject::connect(this, SIGNAL(sg_stop_reading()), worker, SLOT(sl_stop_reading()));
+    QObject::connect(worker, SIGNAL(sg_send_message_to_console(QString)), this, SIGNAL(sg_send_message_to_console(QString)));
+    QObject::connect(worker, SIGNAL(sg_opcclient_got_exception(QString)), this, SIGNAL(sg_send_message_to_console(QString)));
+    QObject::connect(worker, SIGNAL(sg_opcclient_got_exception(QString)), this, SLOT(sl_thread_send_exception(QString)));
+    QObject::connect(worker, SIGNAL(sg_reading_complete(size_t)), this, SIGNAL(sg_reading_request_complete()));
+    QObject::connect(worker, SIGNAL(sg_reading_complete(size_t)), this, SLOT(sl_on_request_reading_tags_complete(size_t)));
+    QObject::connect(worker, SIGNAL(sg_server_error(QString,QString,size_t)), this, SLOT(sl_thread_send_opc_status(QString,QString,size_t)));
+
     ++opc_threads_on_request_count_;
 
-    QString log_message = QString("OPCDataManager: опрос тэгов по запросу. Новый поток %1").arg(thread_name);
+    thread_req->start();
 
+    QString log_message = QString("OPCDataManager: опрос тэгов по запросу.");
     emit sg_send_message_to_console(log_message);
     qInfo() << log_message;
 }
 
 void OPCDataManager::StartPeriodReading()
 {
-    start_period_reading_();
-    emit sg_set_text_state("OPC клиент: запуск");
+    if(period_reading_on_) {
+        emit sg_stop_reading();
+        QTimer::singleShot(TIME_WAITING_THREAD_, this,
+                           [this]() {
+                               period_reading_on_ = false;
+                               opc_threads_on_request_count_ = 0;
+
+                                    }
+                            );
+
+        while(period_reading_on_) {
+            QThread::currentThread()->eventDispatcher()->processEvents(QEventLoop::ExcludeUserInputEvents | QEventLoop::ExcludeSocketNotifiers);
+        }
+    }
+
+    QThread* thread_per = new QThread();
+    OPC_HELPER::OPCDAWorker* worker = new OPC_HELPER::OPCDAWorker();
+
+    std::vector<std::shared_ptr<OPCTag>> tags_vec = GetPeriodicTags();
+    size_t n_nags = tags_vec.size();
+    worker->SetTagsList(std::move(tags_vec));
+    worker->moveToThread(thread_per);
+    worker->SetPeriodicReading(opc_period_reading_);
+
+    QObject::connect(thread_per, SIGNAL(finished()), worker, SLOT(deleteLater()));
+    QObject::connect(thread_per, SIGNAL(finished()), thread_per, SLOT(deleteLater()));
+    QObject::connect(thread_per, SIGNAL(finished()), this, SLOT(sl_periodic_thread_finished()));
+    QObject::connect(thread_per, SIGNAL(started()), worker, SLOT(sl_process()));
+    QObject::connect(worker, SIGNAL(sg_finished()), thread_per, SLOT(quit()));
+    QObject::connect(this, SIGNAL(sg_stop_reading()), worker, SLOT(sl_stop_reading()));
+    QObject::connect(worker, SIGNAL(sg_send_message_to_console(QString)), this, SIGNAL(sg_send_message_to_console(QString)));
+    QObject::connect(worker, SIGNAL(sg_opcclient_got_exception(QString)), this, SIGNAL(sg_send_message_to_console(QString)));
+    QObject::connect(worker, SIGNAL(sg_opcclient_got_exception(QString)), this, SLOT(sl_thread_send_exception(QString)));
+    QObject::connect(worker, SIGNAL(sg_reading_complete(size_t)), this, SIGNAL(sg_reading_periodic_complete()));
+    QObject::connect(worker, SIGNAL(sg_server_error(QString,QString,size_t)), this, SLOT(sl_thread_send_opc_status(QString,QString,size_t)));
+
+    errors_periodic_opc_server_count_ = 0;
+    errors_server_status_periodic_count_ = 0;
+
+    thread_per->start();
+
+    QString log_message = QString("OPCDataManager: запуск периодического опроса. Количество тэгов %1").arg(n_nags);
+    emit sg_send_message_to_console(log_message);
+    qInfo() << log_message;
+    request_stop_periodic_reading_ = false;
+    period_reading_on_ = true;
+    emit sg_periodic_started();
+    emit sg_set_text_state("OPC клиент в работе");
 }
 
 void OPCDataManager::StartPeriodReading(int period)
@@ -306,9 +373,9 @@ void OPCDataManager::StartPeriodReading(int period)
 
 void OPCDataManager::StopPeriodReading()
 {
+    emit sg_set_text_state("OPC клиент: останов периодического чтения.");
+    emit sg_stop_reading();
     request_stop_periodic_reading_ = true;
-    emit sg_set_text_state("OPC клиент: останов");
-    emit sg_stop_periodic_reading();
 }
 
 bool OPCDataManager::OPCDataManager::restore_data_from_json_() {
@@ -400,56 +467,8 @@ bool OPCDataManager::OPCDataManager::restore_data_from_json_() {
     return false;
 }
 
-void OPCDataManager::start_period_reading_()
+void OPCDataManager::sl_opc_read_error(size_t n_tags)
 {
-    if(period_reading_on_) {
-        emit sg_stop_periodic_reading();
-        request_stop_periodic_reading_ = true;
-        QTimer::singleShot(TIME_WAITING_THREAD_*1000, this, [this](){
-            period_reading_on_ = false;
-            opc_threads_on_request_count_ = 0;
-            emit sg_periodic_finished();
-        });
-        while(period_reading_on_) {
-            QThread::currentThread()->eventDispatcher()->processEvents(QEventLoop::AllEvents);
-        }
-    }
-
-    QThread* opc_thread_per = new QThread(this);
-    QString thread_name = QString("PERIODIC_%1").arg(QDateTime::currentSecsSinceEpoch());
-    opc_thread_per->setObjectName(thread_name);
-    std::vector<std::shared_ptr<OPCTag>> tags_vec = GetPeriodicTags();
-    OPC_HELPER::OPCCLientPeriodic* opc_client_per = new OPC_HELPER::OPCCLientPeriodic(opc_period_reading_, tags_vec);
-    QObject::connect(opc_client_per, SIGNAL(sg_send_message_to_console(QString)), this, SIGNAL(sg_send_message_to_console(QString)));
-    QObject::connect(opc_client_per, SIGNAL(sg_opcclient_got_exception(QString)), this, SIGNAL(sg_send_message_to_console(QString)));
-    QObject::connect(opc_client_per, SIGNAL(sg_opcclient_got_exception(QString)), this, SLOT(sl_thread_send_exception(QString)));
-    QObject::connect(opc_client_per, SIGNAL(sg_server_error(QString,QString,OPCSERVERSTATE)), this, SLOT(sl_thread_send_opc_status(QString,QString,OPCSERVERSTATE)));
-    QObject::connect(opc_thread_per, SIGNAL(started()), this, SLOT(sl_thread_periodic_started()));
-    QObject::connect(opc_thread_per, SIGNAL(started()), opc_client_per, SLOT(sl_process()));
-    QObject::connect(opc_client_per, SIGNAL(sg_finished()), opc_thread_per, SLOT(quit()));
-    QObject::connect(opc_thread_per, SIGNAL(finished()), this, SLOT(sl_thread_periodic_finished()));
-    QObject::connect(opc_thread_per, SIGNAL(finished()), opc_thread_per, SLOT(deleteLater()));
-    QObject::connect(this, SIGNAL(sg_stop_periodic_reading()), opc_client_per, SLOT(sl_stop()));
-    QObject::connect(opc_client_per, SIGNAL(sg_reading_error(size_t)), this, SLOT(sl_thread_read_error(size_t)));
-    QObject::connect(opc_client_per, SIGNAL(sg_reading_complete(size_t)), this, SLOT(sl_thread_period_reading_complete(size_t)));
-    QObject::connect(opc_thread_per, &QThread::finished, [opc_client_per] {delete opc_client_per;});
-
-    opc_client_per->moveToThread(opc_thread_per);
-    opc_thread_per->start();
-
-    errors_periodic_opc_server_count_ = 0;
-    errors_server_status_periodic_count_ = 0;
-
-    QString log_message = QString("OPCDataManager: запуск клиента периодического опроса. Поток %1").arg(thread_name);
-    emit sg_send_message_to_console(log_message);
-    qInfo() << log_message;
-    emit sg_set_text_state("OPC клиент: запуск");
-
-}
-
-void OPCDataManager::sl_thread_read_error(size_t n_tags)
-{
-    emit sg_reading_error();
     ++errors_periodic_opc_server_count_;
     QString message = QString("OPCDataManager: ошибка чтения тэгов прочитано %1 из %2. Ошибка подряд: %3")
                           .arg(n_tags)
@@ -458,55 +477,25 @@ void OPCDataManager::sl_thread_read_error(size_t n_tags)
     emit sg_send_message_to_console(message);
     qWarning() << message;
     if(errors_periodic_opc_server_count_ > MAX_PERIODIC_ERRORS_COUNT && !request_stop_periodic_reading_) {
-        emit sg_stop_periodic_reading();
-        request_stop_periodic_reading_ = true;
-        QTimer::singleShot(opc_period_reading_*2000, this, &OPCDataManager::start_period_reading_);
+        emit sg_stop_reading();
+        QTimer::singleShot(opc_period_reading_*2000, this, [this]() {this->StartPeriodReading();});
         emit sg_send_message_to_console(QString("OPCDataManager: таймер на рестарт клиента периодического опроса."));
         emit sg_set_text_state("OPC клиент: перезапуск по ошибке");
         qWarning() << QString("OPCDataManager: таймер на рестарт клиента периодического опроса.");
     }
 }
 
-void OPCDataManager::sl_thread_periodic_started()
-{
-    period_reading_on_ = true;
-    request_stop_periodic_reading_ = false;
-    emit sg_periodic_started();
-    emit sg_set_text_state("OPC клиент в работе");
-}
-
-void OPCDataManager::sl_thread_on_request_started() {
-}
-
-void OPCDataManager::sl_thread_on_request_finished() {
-    --opc_threads_on_request_count_;
-}
-
-void OPCDataManager::sl_thread_periodic_finished()
-{
-    period_reading_on_ = false;
-    emit sg_periodic_finished();
-    emit sg_set_text_state("OPC клиент остановлен");
-    if(!request_stop_periodic_reading_) {
-        QTimer::singleShot(opc_period_reading_*2000, this, &OPCDataManager::start_period_reading_);
-        QString log_message = QString("OPCDataManager: неожиданное завершение потока клиента, перезапуск.");
-        emit sg_send_message_to_console(log_message);
-        qCritical() << log_message;
-        emit sg_set_text_state("OPC клиент перезапуск");
-    }
-}
-
 void OPCDataManager::sl_thread_send_exception(QString text)
 {
-    QString log_message = QString("OPCDataManager: получено исключение потока ОРС-клиента: %1").arg(text);
+    QString log_message = QString("OPCDataManager: получено исключение в ОРС-клиенте: %1").arg(text);
     emit sg_send_message_to_console(log_message);
     qCritical() << log_message;
-    emit sg_stop_periodic_reading();
+    emit sg_stop_reading();
     emit sg_send_message_to_console(QString("OPCDataManager: таймер на рестарт клиента периодического опроса."));
     emit sg_set_text_state("OPC клиент перезапуск");
 }
 
-void OPCDataManager::sl_thread_send_opc_status(QString host, QString server, OPCSERVERSTATE state)
+void OPCDataManager::sl_thread_send_opc_status(QString host, QString server, size_t state)
 {
     QString ser_state;
     switch(state) {
@@ -523,25 +512,39 @@ void OPCDataManager::sl_thread_send_opc_status(QString host, QString server, OPC
     emit sg_send_message_to_console(log_message);
     qWarning() << log_message;
 
-    if(state != OPC_STATUS_RUNNING) ++errors_server_status_periodic_count_;
+    if(state != OPC_STATUS_RUNNING && period_reading_on_) ++errors_server_status_periodic_count_;
     if(errors_server_status_periodic_count_ > MAX_PERIODIC_ERRORS_COUNT && !request_stop_periodic_reading_) {
         log_message = QString("OPCDataManager: перезапуск по максимальному количеству ошибок чтения.");
         emit sg_send_message_to_console(log_message);
         qWarning() << log_message;
-        emit sg_stop_periodic_reading();
-        request_stop_periodic_reading_ = true;
-        QTimer::singleShot(opc_period_reading_*2000, this, &OPCDataManager::start_period_reading_);
+        emit sg_stop_reading();
+        request_stop_periodic_reading_ = false;
     }
 }
 
-void OPCDataManager::sl_thread_period_reading_complete(size_t n_tags)
+void OPCDataManager::sl_periodic_thread_finished()
 {
-    errors_periodic_opc_server_count_ = 0;
-    errors_server_status_periodic_count_ = 0;
-    emit sg_reading_periodic_complete();
+    period_reading_on_ = false;
+    emit sg_periodic_finished();
+    emit sg_set_text_state("OPC клиент остановлен");
+    if(!request_stop_periodic_reading_) {
+        QTimer::singleShot(opc_period_reading_*2000, this, [this]() {this->StartPeriodReading();});
+        QString log_message = QString("OPCDataManager: неожиданное завершение потока клиента, перезапуск.");
+        emit sg_send_message_to_console(log_message);
+        qCritical() << log_message;
+        emit sg_set_text_state("OPC клиент перезапуск");
+    }
 }
 
-void OPCDataManager::sl_thread_onrequest_reading_complete(size_t n_tags)
+void OPCDataManager::sl_on_request_thread_finished()
 {
-    emit sg_reading_request_complete();
+    --opc_threads_on_request_count_;
+
+}
+
+void OPCDataManager::sl_on_request_reading_tags_complete(size_t ntags)
+{
+    QString log_message = QString("OPCDataManager: прочитано %1 тэгов по запросу.").arg(ntags);
+    emit sg_send_message_to_console(log_message);
+    qInfo() << log_message;
 }

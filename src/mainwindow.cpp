@@ -1,6 +1,25 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 
+#include <QCloseEvent>
+#include <QJsonObject>
+#include <QMenu>
+#include <Qfile>
+#include <QJsonDocument>
+#include <QJsonParseError>
+#include <QDir>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QPropertyAnimation>
+
+#include "copcclient.h"
+#include "opcdatamanager.h"
+#include "tgbotmanager.h"
+#include "opcbrowsewidget.h"
+#include "tgbotsettingswidget.h"
+#include "opcvaluesviewer.h"
+#include "tgbotconfigurationwidget.h"
+
 int const MainWindow::EXIT_CODE_REBOOT = 8888;
 int const MainWindow::EXIT_CODE_USER_CMD = 8887;
 

@@ -1,5 +1,8 @@
 #include "opctag.h"
 
+#include <QRegularExpression>
+#include <QRegularExpressionMatch>
+
 using namespace OPC_HELPER;
 using namespace Qt::StringLiterals;
 

@@ -1,5 +1,8 @@
 #include "logger.h"
 
+#include <QFile>
+#include <QDateTime>
+
 QFile* Logger::logfile_ = nullptr;
 QtMessageHandler Logger::original_handler_ = nullptr;
 const std::unordered_map<QtMsgType, QString> Logger::type_names_ = {

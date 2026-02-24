@@ -1,25 +1,19 @@
 #ifndef COPCCLIENT_H
 #define COPCCLIENT_H
 
-#include <winsock2.h>
-
-#include <QtCore>
-#include <QtLogging>
+#include <QObject>
 #include <QString>
 
 #include <set>
-#include <vector>
 #include <unordered_map>
-#include <unordered_set>
+#include <vector>
+#include <optional>
 
 #include "opcda.h"
-#include "OpcEnum.h"
-#include "opcerror.h"
-#include "opccomn.h"
-
-#include "opctag.h"
 
 namespace OPC_HELPER {
+
+class OPCTag;
 
 QString GetErrorStringFromHRESULT(HRESULT hr);
 QString GetServerStatus(const OPCSERVERSTATUS& status_struct);

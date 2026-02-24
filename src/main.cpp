@@ -1,9 +1,21 @@
 #include "mainwindow.h"
 #include <QApplication>
+#include <QMainWindow>
+#include <QJsonDocument>
+#include <QJsonParseError>
+#include <QJsonObject>
+#include <QMessageBox>
+#include <QThread>
+#include <Qdir>
+#include <QFile>
+#include <QtCore>
+#include <QString>
 
 #include "logger.h"
 #include "tgbotmanager.h"
 #include "opcdatamanager.h"
+
+//#include "opctag.h"
 
 bool check_argv(const char* argv, const char* par, std::string_view& value) {
     std::string_view par_str(par);

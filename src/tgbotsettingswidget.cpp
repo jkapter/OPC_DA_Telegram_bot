@@ -1,6 +1,12 @@
 #include "tgbotsettingswidget.h"
 #include "ui_tgbotsettingswidget.h"
 
+#include <QMessageBox>
+
+#include "hintinputdialog.h"
+#include "plaintextconsole.h"
+#include "tgbotmanager.h"
+
 TgBotSettingsWidget::TgBotSettingsWidget(TgBotManager* bot_manager, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::TgBotSettingsWidget)

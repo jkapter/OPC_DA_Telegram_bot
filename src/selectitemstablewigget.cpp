@@ -1,5 +1,14 @@
 #include "selectitemstablewigget.h"
 
+#include <QComboBox>
+#include <QScrollBar>
+#include <QHeaderView>
+
+#include "tgobject.h"
+#include "tgbotmanager.h"
+#include "opcdatamanager.h"
+#include "opctag.h"
+
 SelectItemsTableWidget::SelectItemsTableWidget(TgBotManager &bot_manager, SITW_TYPE type, int rows_num, QWidget *parent)
     : QTableWidget(parent)
     , bot_manager_(bot_manager)

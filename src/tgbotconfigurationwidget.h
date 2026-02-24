@@ -2,19 +2,22 @@
 #define TGBOTCONFIGURATIONWIDGET_H
 
 #include <QWidget>
-#include <QObject>
-#include <QTreeWidgetItem>
-#include <QTableWidget>
+#include <QAbstractItemModel>
+#include <QItemSelectionModel>
 
-#include <unordered_set>
+// #include <QObject>
+// #include <QTreeWidgetItem>
+// #include <QTableWidget>
 
-#include "tgbotmanager.h"
+// #include <unordered_set>
+
+// #include "tgbotmanager.h"
 #include "tgobject.h"
-#include "selectitemstablewigget.h"
-#include "tgmessageconfigurationwidget.h"
-#include "tgcommandconfigurationwidget.h"
-#include "tginlinebuttonsconfigurationwidget.h"
-#include "tgeventsconfigurationwidget.h"
+// #include "selectitemstablewigget.h"
+// #include "tgmessageconfigurationwidget.h"
+// #include "tgcommandconfigurationwidget.h"
+// #include "tginlinebuttonsconfigurationwidget.h"
+// #include "tgeventsconfigurationwidget.h"
 
 Q_DECLARE_METATYPE(std::string)
 
@@ -23,6 +26,12 @@ class TgBotConfigurationWidget;
 }
 
 class TGObjectTreeModel;
+class TgBotManager;
+class TGMessageConfigurationWidget;
+class TGCommandConfigurationWidget;
+class TGInlineButtonsConfigurationWidget;
+class TGEventsConfigurationWidget;
+
 
 class TgBotConfigurationWidget : public QWidget
 {

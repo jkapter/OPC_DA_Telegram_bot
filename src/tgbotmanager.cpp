@@ -1,5 +1,25 @@
 #include "tgbotmanager.h"
 
+#include <QDir>
+#include <QFile>
+#include <QTimer>
+#include <QDateTime>
+#include <QDebug>
+#include <QThread>
+#include <QApplication>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonParseError>
+#include <QJsonDocument>
+#include <QMessageBox>
+
+#include "tgbot/tools/StringTools.h"
+#include "tgbot/Bot.h"
+
+#include "opcdatamanager.h"
+#include "opctag.h"
+#include "tgbotthreadwrapper.h"
+
 QByteArray TGHELPER::EncryptDecryptTokenString(const QByteArray& text, const std::string& key)
 {
     QByteArray ret_array;

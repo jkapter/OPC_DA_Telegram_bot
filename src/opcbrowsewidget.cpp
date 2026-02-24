@@ -1,6 +1,20 @@
 #include "opcbrowsewidget.h"
 #include "ui_opcbrowsewidget.h"
 
+#include <QCheckBox>
+#include <QLineEdit>
+#include <QMenu>
+#include <QMutexLocker>
+#include <QPainter>
+#include <QPushButton>
+#include <QThread>
+#include <QMutex>
+
+#include "plaintextconsole.h"
+#include "copcclient.h"
+#include "opcdatamanager.h"
+#include "opcclientworker.h"
+
 using namespace Qt::Literals::StringLiterals;
 
 OpcBrowseWidget::OpcBrowseWidget(OPC_HELPER::OPCDataManager* dm_ptr, QWidget *parent)
@@ -132,7 +146,7 @@ void OpcBrowseWidget::fill_tags_list_(const QString& hostname, const QString& se
     if(opc_server_to_tags_list_buffer_.count(&(*server_it)) == 0) {
         opc_server_to_tags_list_buffer_[&(*server_it)] = {};
 
-        OPC_HELPER::OPCClientTagBrowser* browser = new OPC_HELPER::OPCClientTagBrowser(hostname, server_name, opc_server_to_tags_list_buffer_.at(&(*server_it)), opc_server_to_mutex_.at(&(*server_it)));
+        OPC_HELPER::OPCDATagBrowser* browser = new OPC_HELPER::OPCDATagBrowser(hostname, server_name, opc_server_to_tags_list_buffer_.at(&(*server_it)), opc_server_to_mutex_.at(&(*server_it)));
         QThread* opc_thread = new QThread(this);
         QObject::connect(browser, SIGNAL(sg_send_message_to_console(QString)), console_, SLOT(sl_add_text_to_console(QString)));
         QObject::connect(browser, SIGNAL(sg_opcclient_got_exception(QString)), console_, SLOT(sl_add_text_to_console(QString)));

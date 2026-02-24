@@ -1,19 +1,25 @@
 #ifndef SELECTITEMSTABLEWIGGET_H
 #define SELECTITEMSTABLEWIGGET_H
 
-#include <QWidget>
 #include <QTableWidget>
-#include <QComboBox>
-#include <QScrollBar>
-#include <QHeaderView>
-#include <QObject>
 
-#include "tgbotmanager.h"
+// #include <QWidget>
+// #include <QTableWidget>
+// #include <QComboBox>
+// #include <QScrollBar>
+// #include <QHeaderView>
+// #include <QObject>
+
+// #include "tgbotmanager.h"
 
 enum class SITW_TYPE {
     Messages,
     InlineButtons
 };
+
+class TgBotManager;
+class TGTrigger;
+class TGMessage;
 
 class SelectItemsTableWidget : public QTableWidget
 {

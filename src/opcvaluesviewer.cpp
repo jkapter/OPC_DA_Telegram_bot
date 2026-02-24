@@ -1,6 +1,14 @@
 #include "opcvaluesviewer.h"
 #include "ui_opcvaluesviewer.h"
 
+#include <QLineEdit>
+#include <QItemSelection>
+
+#include "opcdatamanager.h"
+#include "plaintextconsole.h"
+#include "opctag.h"
+#include "opctagpostprocessingwidget.h"
+
 using namespace OPC_HELPER;
 
 OPCValuesViewer::OPCValuesViewer(OPC_HELPER::OPCDataManager* dm_ptr, QWidget *parent)

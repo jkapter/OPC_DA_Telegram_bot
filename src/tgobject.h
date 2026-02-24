@@ -1,17 +1,31 @@
 #ifndef TGOBJECT_H
 #define TGOBJECT_H
 
-#include <QDebug>
-#include <QTimer>
-
 #include <string>
 #include <charconv>
 #include <functional>
 #include <unordered_set>
 #include <ranges>
+#include <list>
+#include <variant>
 
-#include "tgbot/Bot.h"
-#include "opcdatamanager.h"
+#include <QString>
+#include <QDate>
+#include <QTime>
+
+#include "tgbot/types/BotCommand.h"
+#include "tgbot/types/InlineKeyboardMarkup.h"
+#include "tgbot/types/InlineKeyboardButton.h"
+#include "tgbot/types/CallbackQuery.h"
+
+namespace TgBot { class Bot;}
+namespace OPC_HELPER {
+class OPCDataManager;
+class OPCTag;
+using OpcValueType = std::variant<int64_t, double, QString>;
+}
+
+class QJsonObject;
 
 enum class USER_TYPE {
     UNDEFINED,

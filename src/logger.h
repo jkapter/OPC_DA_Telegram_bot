@@ -1,10 +1,14 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include <QFile>
-#include <QDebug>
-#include <QDateTime>
+#include <QtMessageHandler>
+#include <QString>
 #include <QMutex>
+
+#include <unordered_map>
+
+class QFile;
+class QMessageLogContext;
 
 class Logger
 {

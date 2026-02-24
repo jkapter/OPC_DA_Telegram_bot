@@ -1,12 +1,16 @@
 #ifndef OPCTAG_H
 #define OPCTAG_H
 
+#include <QObject>
 #include <QString>
-#include <QDebug>
-#include <QRegularExpression>
-#include <QRegularExpressionMatch>
 
 #include "opcda.h"
+
+#include <variant>
+#include <cstdint>
+#include <optional>
+#include <unordered_map>
+#include <string>
 
 namespace OPC_HELPER {
 

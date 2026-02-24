@@ -1,5 +1,14 @@
 #include "tgobject.h"
 
+#include "tgbot/Bot.h"
+
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonDocument>
+
+#include "opcdatamanager.h"
+#include "opctag.h"
+
 QString tg_user_type_to_qstring(USER_TYPE type)
 {
     switch(type) {

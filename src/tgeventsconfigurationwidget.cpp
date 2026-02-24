@@ -1,6 +1,12 @@
 #include "tgeventsconfigurationwidget.h"
 #include "ui_tgeventsconfigurationwidget.h"
 
+#include "selectitemstablewigget.h"
+#include "tgbotmanager.h"
+#include "tgobject.h"
+#include "opctag.h"
+#include "opcdatamanager.h"
+
 TGEventsConfigurationWidget::TGEventsConfigurationWidget(TgBotManager& tg_bot_manager, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::TGEventsConfigurationWidget)

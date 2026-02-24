@@ -2,23 +2,35 @@
 #define OPCVALUESVIEWER_H
 
 #include <QWidget>
-#include <QTableWidget>
-#include <QPushButton>
-#include <QLineEdit>
+#include <QAbstractTableModel>
+#include <QDialog>
+#include <QItemSelection>
 
-#include <unordered_map>
-#include <ranges>
+// #include <QTableWidget>
+// #include <QPushButton>
+// #include <QLineEdit>
 
-#include "opcclientworker.h"
-#include "opcdatamanager.h"
-#include "plaintextconsole.h"
-#include "opctagpostprocessingwidget.h"
+// #include <unordered_map>
+// #include <ranges>
+
+// #include "opcclientworker.h"
+// #include "opcdatamanager.h"
+// #include "plaintextconsole.h"
+// #include "opctagpostprocessingwidget.h"
 
 namespace Ui {
 class OPCValuesViewer;
 }
 
+namespace OPC_HELPER {
+class OPCDataManager;
+class OPCTag;
+}
+
 class OPCValuesViewerModel;
+class PlainTextConsole;
+class QTableView;
+class QLineEdit;
 
 class OPCValuesViewer : public QWidget
 {

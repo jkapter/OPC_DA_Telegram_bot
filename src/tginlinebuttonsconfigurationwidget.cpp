@@ -1,6 +1,10 @@
 #include "tginlinebuttonsconfigurationwidget.h"
 #include "ui_tginlinebuttonsconfigurationwidget.h"
 
+#include "selectitemstablewigget.h"
+#include "tgbotmanager.h"
+#include "tgobject.h"
+
 TGInlineButtonsConfigurationWidget::TGInlineButtonsConfigurationWidget(TgBotManager& tg_bot_manager, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::TGInlineButtonsConfigurationWidget)

@@ -3,8 +3,9 @@
 
 #include <QWidget>
 
-#include "tgbotmanager.h"
-#include "selectitemstablewigget.h"
+class TgBotManager;
+class SelectItemsTableWidget;
+class TGButtonWCallback;
 
 namespace Ui {
 class TGInlineButtonsConfigurationWidget;
