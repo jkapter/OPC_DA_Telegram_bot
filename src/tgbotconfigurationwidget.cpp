@@ -1,6 +1,12 @@
 #include "tgbotconfigurationwidget.h"
 #include "ui_tgbotconfigurationwidget.h"
 
+#include "tgmessageconfigurationwidget.h"
+#include "tgcommandconfigurationwidget.h"
+#include "tginlinebuttonsconfigurationwidget.h"
+#include "tgeventsconfigurationwidget.h"
+#include "tgbotmanager.h"
+
 TgBotConfigurationWidget::TgBotConfigurationWidget(TgBotManager* bot_manager, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::TgBotConfigurationWidget)

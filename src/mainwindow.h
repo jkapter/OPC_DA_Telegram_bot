@@ -1,22 +1,26 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <boost/asio.hpp> //here to supress warning including windows.h before winsock2.h
-
+#include <QObject>
 #include <QMainWindow>
 #include <QSystemTrayIcon>
-#include <QMenu>
-#include <QMessageBox>
-#include <QCloseEvent>
-#include <QFileDialog>
+
+// #include <boost/asio.hpp> //here to supress warning including windows.h before winsock2.h
+
+// #include <QMainWindow>
+// #include <QSystemTrayIcon>
+// #include <QMenu>
+// #include <QMessageBox>
+// #include <QCloseEvent>
+// #include <QFileDialog>
 
 #include "copcclient.h"
-#include "opcdatamanager.h"
-#include "tgbotmanager.h"
-#include "opcbrowsewidget.h"
-#include "tgbotsettingswidget.h"
-#include "opcvaluesviewer.h"
-#include "tgbotconfigurationwidget.h"
+// #include "opcdatamanager.h"
+// #include "tgbotmanager.h"
+// #include "opcbrowsewidget.h"
+// #include "tgbotsettingswidget.h"
+// #include "opcvaluesviewer.h"
+// #include "tgbotconfigurationwidget.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -24,12 +28,19 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
+namespace OPC_HELPER {
+class OPCDataManager;
+}
+
+class TgBotManager;
+class QSystemTrayIcon;
+class QLabel;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    //MainWindow(QWidget *parent = nullptr) = 0;
     MainWindow(TgBotManager* bot_manager, OPC_HELPER::OPCDataManager* opc_data_manager, QWidget *parent = nullptr);
     virtual ~MainWindow();
 

@@ -2,12 +2,9 @@
 #define HINTINPUTDIALOG_H
 
 #include <QDialog>
-#include <QLineEdit>
-#include <QBoxLayout>
-#include <QGridLayout>
-#include <QPushButton>
-#include <QDoubleValidator>
-#include <QPlainTextEdit>
+
+class QPlainTextEdit;
+class QString;
 
 class HintInputDialog: public QDialog
 {

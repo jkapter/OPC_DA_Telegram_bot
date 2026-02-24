@@ -2,12 +2,15 @@
 #define TGEVENTSCONFIGURATIONWIDGET_H
 
 #include <QWidget>
-#include <QTableWidget>
-#include <QValidator>
 
-#include "tgbotmanager.h"
-#include "selectitemstablewigget.h"
+class TgBotManager;
+class SelectItemsTableWidget;
+class TGTriggerTagValue;
+class TGScheduledEvent;
+class QValidator;
+class QTableWidget;
 
+namespace OPC_HELPER { class OPCTag; }
 namespace Ui {
 class TGEventsConfigurationWidget;
 }

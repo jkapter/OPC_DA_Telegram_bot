@@ -1,27 +1,48 @@
 #ifndef OPCBROWSEWIDGET_H
 #define OPCBROWSEWIDGET_H
 
+#include <QObject>
 #include <QWidget>
-#include <QTreeWidget>
-#include <QTreeWidgetItem>
-#include <QCheckBox>
-#include <QPushButton>
-#include <QMenu>
 #include <QDialog>
-#include <QVBoxLayout>
-#include <QLineEdit>
+#include <QAbstractTableModel>
 #include <QStyledItemDelegate>
-#include <QPainter>
+#include <QString>
 
-#include "copcclient.h"
-#include "opcdatamanager.h"
-#include "plaintextconsole.h"
+#include <unordered_map>
+#include <unordered_set>
+
+// #include <QWidget>
+// #include <QTreeWidget>
+// #include <QTreeWidgetItem>
+// #include <QCheckBox>
+// #include <QPushButton>
+// #include <QMenu>
+// #include <QDialog>
+// #include <QVBoxLayout>
+// #include <QLineEdit>
+// #include <QStyledItemDelegate>
+// #include <QPainter>
+
+// #include "copcclient.h"
+// #include "opcdatamanager.h"
+// #include "plaintextconsole.h"
 
 namespace Ui {
 class OpcBrowseWidget;
 }
 
+namespace OPC_HELPER {
+class OPCDataManager;
+enum class TAG_STATUS;
+}
+
+
 class OPCTagsViewerModel;
+class QTreeWidgetItem;
+class QMutex;
+class QCheckBox;
+class QLineEdit;
+class PlainTextConsole;
 
 class OpcBrowseWidget : public QWidget
 {

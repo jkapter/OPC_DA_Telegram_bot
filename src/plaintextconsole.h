@@ -2,8 +2,13 @@
 #define PLAINTEXTCONSOLE_H
 
 #include <QPlainTextEdit>
-#include <QScrollBar>
 #include <QDateTime>
+#include <QScrollBar>
+
+// #include <QScrollBar>
+//
+
+class QDateTime;
 
 enum class ConsoleMessageType {
     MNORMAL,

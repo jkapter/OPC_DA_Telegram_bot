@@ -1,11 +1,9 @@
 #ifndef TGBOTTHREADWRAPPER_H
 #define TGBOTTHREADWRAPPER_H
 
-#include <QThread>
-#include <QDebug>
-#include <QAbstractEventDispatcher>
+#include <QObject>
 
-#include "tgbot/tgbot.h"
+namespace TgBot { class Bot;}
 
 class TgBotWorker: public QObject
 {

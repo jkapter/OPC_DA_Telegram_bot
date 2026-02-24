@@ -1,6 +1,8 @@
 #include "opctagpostprocessingwidget.h"
 #include "ui_opctagpostprocessingwidget.h"
 
+#include "opctag.h"
+
 OPCTagPostProcessingWidget::OPCTagPostProcessingWidget(std::shared_ptr<OPC_HELPER::OPCTag> tag, QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::OPCTagPostProcessingWidget)

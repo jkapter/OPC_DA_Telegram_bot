@@ -1,17 +1,32 @@
 #ifndef TGBOTMANAGER_H
 #define TGBOTMANAGER_H
 
-#include <QObject>
-#include <QString>
-#include <QMessageBox>
 #include <QDateTime>
-#include <QFile>
+#include <QObject>
+#include <QMessageBox>
 
-#include <ranges>
+#include "tgbot/types/User.h"
+#include "tgbot/types/Message.h"
+#include "tgbot/types/CallbackQuery.h"
 
-#include "tgbot/Bot.h"
-#include "tgbotthreadwrapper.h"
 #include "tgobject.h"
+#include "tgbot/Bot.h"
+
+namespace OPC_HELPER {
+class OPCDataManager;
+class OPCTag;
+}
+
+class TGTriggerUserCommand;
+class TGTriggerTagValue;
+class TGMessage;
+class TGParent;
+class QTimer;
+class TGScheduledEvent;
+class TGButtonWCallback;
+class TgParent;
+class QMessageBox;
+
 
 namespace TGHELPER {
 const std::string secure_key_string = "dyzsxpRl8souDS8CNLuyAolMD4NTPQRtpH4xZXLv2WlrtUv8al";

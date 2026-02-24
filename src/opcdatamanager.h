@@ -3,13 +3,17 @@
 
 #include <QObject>
 #include <QRegularExpression>
-#include <set>
 
-#include "copcclient.h"
+#include <set>
+#include <unordered_map>
+#include <map>
+#include <vector>
+
+#include "opcda.h"
 #include "opctag.h"
-#include "opcclientworker.h"
 
 namespace OPC_HELPER {
+class OPCDAWorker;
 
 enum class TAG_STATUS {
     NOT_FOUND,
@@ -62,26 +66,21 @@ signals:
     void sg_set_text_state(QString text);
     void sg_reading_periodic_complete();
     void sg_reading_request_complete();
-    void sg_reading_error();
-    void sg_periodic_started();
     void sg_periodic_finished();
-    void sg_stop_periodic_reading();
-    void sg_set_period_reading(int period);
     void sg_periodic_list_changed();
+    void sg_periodic_started();
+    void sg_stop_reading();
 
 private slots:
-    void sl_thread_read_error(size_t n_tags);
-    void sl_thread_periodic_started();
-    void sl_thread_periodic_finished();
-    void sl_thread_on_request_started();
-    void sl_thread_on_request_finished();
+    void sl_opc_read_error(size_t n_tags);
     void sl_thread_send_exception(QString text);
-    void sl_thread_send_opc_status(QString host, QString server, OPCSERVERSTATE state);
-    void sl_thread_period_reading_complete(size_t n_tags);
-    void sl_thread_onrequest_reading_complete(size_t n_tags);
+    void sl_thread_send_opc_status(QString host, QString server, size_t server_state);
+    void sl_periodic_thread_finished();
+    void sl_on_request_thread_finished();
+    void sl_on_request_reading_tags_complete(size_t ntags);
 
 private:
-    const int TIME_WAITING_THREAD_ = 600;
+    const int TIME_WAITING_THREAD_ = 30000; //30sec
     const int MAX_PERIODIC_ERRORS_COUNT = 10;
     QRegularExpression tag_name_check_re_;
     size_t last_id_ = 0;

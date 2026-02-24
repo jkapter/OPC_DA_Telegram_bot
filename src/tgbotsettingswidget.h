@@ -3,9 +3,12 @@
 
 #include <QWidget>
 
-#include "tgbotmanager.h"
-#include "plaintextconsole.h"
-#include "hintinputdialog.h"
+// #include "tgbotmanager.h"
+// #include "plaintextconsole.h"
+// #include "hintinputdialog.h"
+
+class TgBotManager;
+class PlainTextConsole;
 
 namespace Ui {
 class TgBotSettingsWidget;

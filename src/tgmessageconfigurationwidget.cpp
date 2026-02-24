@@ -1,6 +1,12 @@
 #include "tgmessageconfigurationwidget.h"
 #include "ui_tgmessageconfigurationwidget.h"
 
+#include "selectitemstablewigget.h"
+#include "opctag.h"
+#include "tgbotmanager.h"
+#include "tgobject.h"
+#include "opcdatamanager.h"
+
 TGMessageConfigurationWidget::TGMessageConfigurationWidget(TgBotManager &tg_bot_manager, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::TGMessageConfigurationWidget)

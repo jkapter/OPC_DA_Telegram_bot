@@ -1,6 +1,10 @@
 #include "tgcommandconfigurationwidget.h"
 #include "ui_tgcommandconfigurationwidget.h"
 
+#include "selectitemstablewigget.h"
+#include "tgbotmanager.h"
+#include "tgobject.h"
+
 TGCommandConfigurationWidget::TGCommandConfigurationWidget(TgBotManager& tg_bot_manager, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::TGCommandConfigurationWidget)

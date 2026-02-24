@@ -1,5 +1,9 @@
 #include "hintinputdialog.h"
 
+#include <QBoxLayout>
+#include <QPlainTextEdit>
+#include <QPushButton>
+
 HintInputDialog::HintInputDialog(QString help_text, QWidget* parent): QDialog(parent)
 {
 

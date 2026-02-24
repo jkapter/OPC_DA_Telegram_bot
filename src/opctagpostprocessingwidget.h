@@ -3,10 +3,12 @@
 
 #include <QDialog>
 
-#include "opctag.h"
-
 namespace Ui {
 class OPCTagPostProcessingWidget;
+}
+
+namespace OPC_HELPER {
+class OPCTag;
 }
 
 class OPCTagPostProcessingWidget : public QDialog

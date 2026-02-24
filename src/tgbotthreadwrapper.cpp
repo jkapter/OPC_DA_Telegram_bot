@@ -1,4 +1,10 @@
 #include "tgbotthreadwrapper.h"
+#include "tgbot/tgbot.h"
+
+#include <QDebug>
+#include <QThread>
+#include <QAbstractEventDispatcher>
+#include <QEventLoop>
 
 TgBotWorker::TgBotWorker(TgBot::Bot *bot, QObject *parent)
     : QObject(parent)

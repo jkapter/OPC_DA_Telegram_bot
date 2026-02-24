@@ -1,4 +1,14 @@
 #include "copcclient.h"
+#include <QDebug>
+#include <QEventLoop>
+#include <QThread>
+#include <QAbstractEventDispatcher>
+
+#include "opccomn.h"
+#include "opcerror.h"
+
+#include "opctag.h"
+
 //IOPCServerList uuid(13486D50-4821-11D2-A494-3CB306C10000)
 __CRT_UUID_DECL(IOPCServerList, 0x13486D50, 0x4821, 0x11d2, 0xa4, 0x94, 0x3c, 0xb3, 0x06, 0xc1, 0x00, 0x00)
 
@@ -14,13 +24,14 @@ __CRT_UUID_DECL(IOPCItemMgt, 0x39c13a54, 0x011e, 0x11d0, 0x96, 0x75, 0x00, 0x20,
 // IOPCSyncIO uuid(39c13a52-011e-11d0-9675-0020afd8adb3)
 __CRT_UUID_DECL(IOPCSyncIO, 0x39c13a52, 0x011e, 0x11d0, 0x96, 0x75, 0x00, 0x20, 0xaf, 0xd8, 0xad, 0xb3)
 
+
 using namespace OPC_HELPER;
 using namespace Qt::StringLiterals;
 
 COPCClient::COPCClient(): QObject()
 {
     qInfo() << QString("Новый экземпляр ОРС клиента, поток [%1]").arg(QThread::currentThread()->objectName());
-    CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+    CoInitializeEx(NULL, COINIT_MULTITHREADED);//COINIT_APARTMENTTHREADED);
 }
 
 COPCClient::~COPCClient() {
