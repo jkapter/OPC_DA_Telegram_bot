@@ -5,9 +5,6 @@
 #include <QDateTime>
 #include <QScrollBar>
 
-// #include <QScrollBar>
-//
-
 class QDateTime;
 
 enum class ConsoleMessageType {

@@ -23,6 +23,8 @@
 int const MainWindow::EXIT_CODE_REBOOT = 8888;
 int const MainWindow::EXIT_CODE_USER_CMD = 8887;
 
+using namespace Qt::StringLiterals;
+
 MainWindow::~MainWindow()
 {
     qInfo() << QString("MainWindow: деструктор");
@@ -53,7 +55,7 @@ MainWindow::MainWindow(TgBotManager* bot_manager, OPC_HELPER::OPCDataManager* op
         qWarning() << QString("Не удается открыть файл стилей.");
     }
 
-    status_bar_opc_label_ = new QLabel(this);
+    status_bar_opc_label_ = new QLabel(u"OPC клиент остановлен"_s, this);
     status_bar_bot_label_ = new QLabel(this);
     status_bar_message_label_ = new QLabel(this);
 

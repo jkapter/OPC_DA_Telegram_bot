@@ -3,15 +3,6 @@
 
 #include <QTableWidget>
 
-// #include <QWidget>
-// #include <QTableWidget>
-// #include <QComboBox>
-// #include <QScrollBar>
-// #include <QHeaderView>
-// #include <QObject>
-
-// #include "tgbotmanager.h"
-
 enum class SITW_TYPE {
     Messages,
     InlineButtons

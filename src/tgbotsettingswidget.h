@@ -3,10 +3,6 @@
 
 #include <QWidget>
 
-// #include "tgbotmanager.h"
-// #include "plaintextconsole.h"
-// #include "hintinputdialog.h"
-
 class TgBotManager;
 class PlainTextConsole;
 

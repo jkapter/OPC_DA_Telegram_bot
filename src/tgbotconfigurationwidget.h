@@ -5,19 +5,7 @@
 #include <QAbstractItemModel>
 #include <QItemSelectionModel>
 
-// #include <QObject>
-// #include <QTreeWidgetItem>
-// #include <QTableWidget>
-
-// #include <unordered_set>
-
-// #include "tgbotmanager.h"
 #include "tgobject.h"
-// #include "selectitemstablewigget.h"
-// #include "tgmessageconfigurationwidget.h"
-// #include "tgcommandconfigurationwidget.h"
-// #include "tginlinebuttonsconfigurationwidget.h"
-// #include "tgeventsconfigurationwidget.h"
 
 Q_DECLARE_METATYPE(std::string)
 

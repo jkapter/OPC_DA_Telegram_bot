@@ -20,8 +20,6 @@ OPCDataManager::OPCDataManager()
 {
     tag_name_check_re_.setPattern("^([^@]*)@([^@#].*)#(.*)$");
     RestoreDataFromFile();
-    QTimer::singleShot(50, this, [this](){emit sg_set_text_state("OPC клиент остановлен");});
-
 }
 
 OPCDataManager::~OPCDataManager() {

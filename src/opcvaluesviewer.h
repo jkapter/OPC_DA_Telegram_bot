@@ -6,18 +6,6 @@
 #include <QDialog>
 #include <QItemSelection>
 
-// #include <QTableWidget>
-// #include <QPushButton>
-// #include <QLineEdit>
-
-// #include <unordered_map>
-// #include <ranges>
-
-// #include "opcclientworker.h"
-// #include "opcdatamanager.h"
-// #include "plaintextconsole.h"
-// #include "opctagpostprocessingwidget.h"
-
 namespace Ui {
 class OPCValuesViewer;
 }

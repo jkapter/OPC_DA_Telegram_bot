@@ -11,22 +11,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-// #include <QWidget>
-// #include <QTreeWidget>
-// #include <QTreeWidgetItem>
-// #include <QCheckBox>
-// #include <QPushButton>
-// #include <QMenu>
-// #include <QDialog>
-// #include <QVBoxLayout>
-// #include <QLineEdit>
-// #include <QStyledItemDelegate>
-// #include <QPainter>
-
-// #include "copcclient.h"
-// #include "opcdatamanager.h"
-// #include "plaintextconsole.h"
-
 namespace Ui {
 class OpcBrowseWidget;
 }

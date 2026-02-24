@@ -5,22 +5,7 @@
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 
-// #include <boost/asio.hpp> //here to supress warning including windows.h before winsock2.h
-
-// #include <QMainWindow>
-// #include <QSystemTrayIcon>
-// #include <QMenu>
-// #include <QMessageBox>
-// #include <QCloseEvent>
-// #include <QFileDialog>
-
 #include "copcclient.h"
-// #include "opcdatamanager.h"
-// #include "tgbotmanager.h"
-// #include "opcbrowsewidget.h"
-// #include "tgbotsettingswidget.h"
-// #include "opcvaluesviewer.h"
-// #include "tgbotconfigurationwidget.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
