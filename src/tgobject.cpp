@@ -31,6 +31,7 @@ USER_TYPE tg_user_type_from_qstring(QString type)
     if(type == "UNDEFINED") return USER_TYPE::UNDEFINED;
     if(type == "REGISTRD") return USER_TYPE::REGISTRD;
     if(type == "CHANNEL") return USER_TYPE::CHANNEL;
+    if(type == "UNREGISTERED") return USER_TYPE::UNREGISTERED;
     return USER_TYPE::UNDEFINED;
 }
 
@@ -80,7 +81,7 @@ void TGParent::ResetTgBotPtr()
 
 void TGParent::InitializeBot(const std::string& token)
 {
-    bot_ptr_.reset(new TgBot::Bot(token));
+    bot_ptr_ = std::make_unique<TgBot::Bot>(token);
     ClearChatIdData();
 }
 
@@ -209,7 +210,7 @@ void TGMessage::SetText(const std::string& mes) {
     get_tags_ptr_();
 }
 
-void TGMessage::SetText(const std::string&& mes) {
+void TGMessage::SetText(std::string&& mes) {
     message_ = std::move(mes);
     screen_symbols_(message_, screened_symbols_);
     parse_message_();
@@ -246,7 +247,7 @@ const std::string TGMessage::GetTextToSend() const
             message += it;
         }
     }
-    screen_symbols_(message, screened_symbols_);
+
     return message;
 }
 
@@ -530,7 +531,7 @@ QJsonObject TGTriggerTagValue::SaveToJson() const
 
     size_t tag_id = 0;
     if(tag_ptr_ && GetTGParent()->OPCManager()) {
-        tag_id = GetTGParent()->OPCManager()->GetTagId(tag_ptr_->GetTagName());
+        tag_id = GetTGParent()->OPCManager()->GetTagId(tag_ptr_->GetFullName());
     }
     ret_obj.insert("tag_id", static_cast<int64_t>(tag_id));
     QJsonArray messages;
@@ -596,7 +597,7 @@ QJsonObject TGButtonWCallback::SaveToJson() const
     QJsonArray tags;
     for(const auto& [tag, val]: opc_tags_to_set_values_) {
         QJsonObject obj;
-        obj.insert("tag_id", static_cast<qint64>(GetTGParent()->OPCManager()->GetTagId(tag->GetTagName())));
+        obj.insert("tag_id", static_cast<qint64>(GetTGParent()->OPCManager()->GetTagId(tag->GetFullName())));
         switch(val.index()) {
         case 0: obj.insert("int_value", std::get<int64_t>(val)); break;
         case 1: obj.insert("double_value", std::get<double>(val)); break;
@@ -627,7 +628,7 @@ void TGTrigger::ClearMessages()
 void TGTrigger::DeleteMessage(const std::string &id)
 {
     for(auto it = messages_.begin(); it != messages_.end(); ++it) {
-        if((*it)->GetId() == id) {
+        if((*it) && (*it)->GetId() == id) {
             messages_.erase(it);
             break;
         }

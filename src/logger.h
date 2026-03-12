@@ -13,8 +13,11 @@ class QMessageLogContext;
 class Logger
 {
 public:
-    Logger() = default;
     explicit Logger(const QString& dir, const QString& name);
+    Logger(const Logger&) = delete;
+    Logger(Logger&&) = delete;
+    Logger& operator=(Logger&&) = delete;
+
     static void Init(const QString& dir, const QString& name);
     static void Clear();
     static void SetMaxSize(unsigned int new_size);

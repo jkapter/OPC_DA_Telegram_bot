@@ -28,8 +28,7 @@ void Logger::check_and_rename_()
         logfile_->write(QString("Создание нового файла лога").toLocal8Bit());
         logfile_->flush();
         logfile_->rename(QString("%1/%2_%3").arg(app_directory_, QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss").toLocal8Bit(), file_name_));
-        logfile_->close();
-        logfile_->setFileName(QString("%1/%2").arg(app_directory_, file_name_));
+            logfile_->setFileName(QString("%1/%2").arg(app_directory_, file_name_));
 
         if(!logfile_->open(QIODevice::Append)) {
             delete logfile_;
@@ -102,8 +101,12 @@ void Logger::LogMessage(QtMsgType type, const QMessageLogContext &context, const
     if(!logfile_) {
         return;
     }
+
+    auto it = type_names_.find(type);
+    QString type_str = (it != type_names_.end()) ? it->second : "Unknown ";
+
     QString log_line = QString("%1 | %2 | ").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss.z"), -25)
-                                            .arg(Logger::type_names_.at(type));
+                                            .arg(type_str);
 
     if(context.line > 0) {
         log_line.append(QString("%1 | %2 | %3 | ").arg(context.line, -5)
@@ -115,7 +118,7 @@ void Logger::LogMessage(QtMsgType type, const QMessageLogContext &context, const
     log_line.append(message);
     log_line.append(QString("\n"));
 
-    logfile_->write(log_line.toLocal8Bit());
+    logfile_->write(log_line.toUtf8());
     logfile_->flush();
 }
 

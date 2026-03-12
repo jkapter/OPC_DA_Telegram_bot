@@ -50,7 +50,7 @@ class COPCClient : public QObject {
     Q_OBJECT
 public:
     COPCClient();
-    virtual ~COPCClient();
+    ~COPCClient();
 
     const std::set<QString>& GetOPCServerNames(const QString& hostname);
     const std::vector<QString>& GetOPCTagsNames(const QString& hostname, const QString& server_name, int notify_of_portion = 50);
@@ -59,7 +59,6 @@ public:
     size_t AddTags(std::vector<std::shared_ptr<OPCTag>>& tags);
     size_t ReadTags();
     size_t WriteTags();
-    void ClearData();
     void ClearTags();
     std::optional<OPCSERVERSTATUS> GetServerStatus(const QString& hostname, const QString& server_name);
 

@@ -28,13 +28,13 @@ using OpcValueType = std::variant<int64_t, double, QString>;
 class QJsonObject;
 
 enum class USER_TYPE {
-    UNDEFINED,
-    NEW_USER,
-    UNREGISTERED,
-    REGISTRD,
-    CHANNEL,
-    ADMIN,
-    BANNED
+    UNDEFINED       = 0,
+    NEW_USER        = 1,
+    UNREGISTERED    = 2,
+    REGISTRD        = 3,
+    CHANNEL         = 4,
+    ADMIN           = 5,
+    BANNED          = 6
 };
 
 enum class TGOBJECT_TYPE {
@@ -98,7 +98,7 @@ public:
     explicit TGMessage(std::string&& message, TGParent* parent);
 
     void SetText(const std::string& mes);
-    void SetText(const std::string&& mes);
+    void SetText(std::string&& mes);
     const std::string& GetText() const;
     const std::string GetTextToSend() const;
     std::vector<size_t> GetOPCTagIDs() const;

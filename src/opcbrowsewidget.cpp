@@ -443,7 +443,7 @@ QVariant OPCTagsViewerModel::data(const QModelIndex &index, int role) const
     if(!index.isValid()) return {};
 
     if(role == Qt::DisplayRole && index.column() == 0) {
-        if(index.row() < tags_.size()) {
+        if(std::cmp_less(index.row(), tags_.size())) {
             return tags_.at(index.row());
         } else {
             return {};
@@ -472,7 +472,7 @@ bool OPCTagsViewerModel::setData(const QModelIndex& index, const QVariant& value
 {
     if (!index.isValid()) return false;
 
-    if(index.column() == 1 && index.row() < tags_.size())
+    if(index.column() == 1 && std::cmp_less(index.row(), tags_.size()))
     {
         QString full_tag_name = QString("%1#%2").arg(tag_prefix_, tags_.at(index.row()));
         if(value.toBool()) {
@@ -487,7 +487,7 @@ bool OPCTagsViewerModel::setData(const QModelIndex& index, const QVariant& value
 
 QModelIndex OPCTagsViewerModel::index(int row, int column, const QModelIndex &parent) const
 {
-    if(row >=0 && row < static_cast<int>(tags_.size()) && column >=0 && column < 2) {
+    if(row >=0 && std::cmp_less(row, tags_.size()) && column >=0 && column < 2) {
         return createIndex(row, column);
     }
     return QModelIndex();

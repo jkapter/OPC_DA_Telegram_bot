@@ -23,7 +23,7 @@ OpcValueType operator-(OpcValueType lhs, OpcValueType rhs);
 OpcValueType operator+(OpcValueType lhs, OpcValueType rhs);
 bool operator<(OpcValueType lhs, OpcValueType rhs);
 bool operator>(OpcValueType lhs, OpcValueType rhs);
-OpcValueType operator==(OpcValueType lhs, OpcValueType rhs);
+bool operator==(OpcValueType lhs, OpcValueType rhs);
 
 QString toString(OpcValueType val);
 double toDouble(OpcValueType val);
@@ -37,40 +37,50 @@ public:
     explicit OPCTag(const QString& server_name, const QString& tag_name);
     explicit OPCTag(const QString& hostname, const QString& server_name, const QString& tag_name);
 
-    void SetType(VARENUM type);
-    tagOPCITEMDEF GetItemDefStruct();
-    void SetOPCItemState(tagOPCITEMSTATE* item_state);
+    //void SetType(VARENUM type);
+
+    tagOPCITEMDEF GetItemDefStruct(); //client
+    void SetOPCItemState(tagOPCITEMSTATE* item_state);//client
+
     FILETIME GetLastTimeState() const;
-    const QString& GetServerName() const;
-    const  QString& GetTagName() const;
-    const QString& GetHostname() const;
+    QString GetTimeStamp() const;
+
+    const QString& GetServerName() const; //all
+    const  QString& GetTagName() const; // all
+    const QString& GetHostname() const; // client, dm
     QString GetFullName() const;
-    QString GetStringValue(bool use_substitute_values = true) const;
-    QString GetStringType() const;
+
+    QString GetStringType() const; //viewer, widgets
+    QString GetStringValue(bool use_substitute_values = true) const; //viewer, tgman
     int64_t GetIntValue() const;
     uint64_t GetUintValue() const;
     double GetDoubleValue() const;
     bool GetBoolValue() const;
-    WORD GetTagQuality() const;
-    bool TagQualityIsGood() const;
-    QString GetTimeStamp() const;
-    bool ValueIsInteger() const;
-    bool ValueIsReal() const;
-    bool ValueIsUnsignedInteger() const;
-    bool ValueIsString() const;
-    bool ValueIsBool() const;
-    const QString& GetCommentString() const;
-    void SetCommentString(QString str);
-    OpcValueType GetValue(bool use_substitute_values = true) const;
-    void SetGainOption(double gain);
-    void ResetGainOption();
-    std::optional<double> GetGainOption() const;
-    void AddEnumStringValues(QString raw_value, QString substitute_value);
-    const std::unordered_map<QString, QString>& GetEnumStringValues() const;
+    OpcValueType GetValue(bool use_substitute_values = true) const; //tgobj
+
+    WORD GetTagQuality() const; //viewer, tgman
+    bool TagQualityIsGood() const; //tgobject
+
+    bool ValueIsInteger() const; //viewer, widgets
+    bool ValueIsReal() const; //viewer, widgets
+    bool ValueIsUnsignedInteger() const; //viewer, widgets
+    bool ValueIsString() const; //viewer, widgets
+    bool ValueIsBool() const; //viewer, widgets
+
+    const QString& GetCommentString() const; //viewer, opcman
+    void SetCommentString(const QString& str); //viewer, opcman
+    void SetCommentString(QString&& str); //viewer, opcman
+
+    std::optional<double> GetGainOption() const; //opcman, widget
+    void SetGainOption(double gain); //opcman, widget
+    void ResetGainOption(); //widget
+
+    void AddEnumStringValues(const QString& raw_value, const QString& substitute_value); //opcman, widget
+    const std::unordered_map<QString, QString>& GetEnumStringValues() const; //viewer, opcman, widget
     void ClearEnumStringValues();
 
-    bool SetValueToWrite(OpcValueType val);
-    std::optional<VARIANT> GetOPCVariantToWrite() const;
+    bool SetValueToWrite(OpcValueType val); //viewer, tgobj
+    std::optional<VARIANT> GetOPCVariantToWrite() const; //client
     void ResetValueToWrite();
 
 private:
@@ -78,7 +88,7 @@ private:
     QString server_name_;
     QString tag_name_;
     VARENUM type_ = VT_EMPTY;
-    tagOPCITEMSTATE last_value_;
+    tagOPCITEMSTATE last_value_ = {};
     std::optional<VARIANT> value_to_write_ = std::nullopt;
     std::wstring buffer_string_;
     std::wstring tag_name_wstring_;

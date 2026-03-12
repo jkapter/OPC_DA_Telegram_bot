@@ -31,14 +31,13 @@ int main(int argc, char *argv[])
 {
 
     int exit_code = 0;
-    Logger log;
-    Logger::Init(QDir::currentPath(), QString("log.txt"));
+    Logger log(QDir::currentPath(), QString("log.txt"));
     Logger::SetMaxSize(200000);
 
     QApplication app(argc, argv);
 
     if(argc > 1) {
-        for(int i = 0; i < argc; ++i) {
+        for(int i = 1; i < argc; ++i) {
             std::string_view par_val;
 
             if(check_argv(argv[i], "-token=", par_val)) {
@@ -80,6 +79,7 @@ int main(int argc, char *argv[])
                 start_app_minimized = input_doc.object().value("start_application_on_tray").toBool();
             }
         }
+        input_file.close();
         }
 
         MainWindow w(tg_bot_manager_ptr.get(), opc_manager_ptr.get());

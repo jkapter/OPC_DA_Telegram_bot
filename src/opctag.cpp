@@ -151,9 +151,9 @@ OPCTag::OPCTag(const QString& fullname)
         hostname_ = match.captured(1);
         server_name_ = match.captured(2);
         tag_name_ = match.captured(3);
-        tag_name_wstring_ = tag_name_.toStdWString();
-        comment_ = QString("%1@%2").arg(hostname_, server_name_);
     }
+    tag_name_wstring_ = tag_name_.toStdWString();
+    comment_ = QString("%1@%2").arg(hostname_, server_name_);
 }
 
 OPCTag::OPCTag(const QString& server_name, const QString& tag_name)
@@ -172,9 +172,9 @@ OPCTag::OPCTag(const QString& host_name, const QString& server_name, const QStri
     , comment_(QString("%1@%2").arg(host_name, server_name))
 {}
 
-void OPCTag::SetType(VARENUM type) {
+/*void OPCTag::SetType(VARENUM type) {
     type_ = type;
-}
+}*/
 
 tagOPCITEMDEF OPCTag::GetItemDefStruct() {
     tagOPCITEMDEF ret_def;
@@ -220,12 +220,12 @@ int64_t OPCTag::GetIntValue() const {
     switch(type_) {
     case VT_I2: ret_val = static_cast<int64_t>(last_value_.vDataValue.iVal); break;
     case VT_I4: ret_val = static_cast<int64_t>(last_value_.vDataValue.lVal); break;
-    case VT_I1: ret_val = static_cast<int64_t>(last_value_.vDataValue.iVal); break;
+    case VT_I1: ret_val = static_cast<int64_t>(last_value_.vDataValue.bVal); break;
     case VT_I8: ret_val = static_cast<int64_t>(last_value_.vDataValue.llVal); break;
     case VT_INT: ret_val = static_cast<int64_t>(last_value_.vDataValue.intVal); break;
     case VT_R4: ret_val = static_cast<int64_t>(last_value_.vDataValue.fltVal); break;
     case VT_R8: ret_val = static_cast<int64_t>(last_value_.vDataValue.dblVal); break;
-    case VT_BOOL: ret_val = last_value_.vDataValue.boolVal == VARIANT_TRUE ? 1 : 0;
+    case VT_BOOL: ret_val = last_value_.vDataValue.boolVal == VARIANT_TRUE ? 1 : 0; break;
     default: ;
     }
 
@@ -241,7 +241,7 @@ uint64_t OPCTag::GetUintValue() const {
     case VT_UI4: ret_val = static_cast<uint64_t>(last_value_.vDataValue.ulVal); break;
     case VT_UI8: ret_val = static_cast<uint64_t>(last_value_.vDataValue.ullVal); break;
     case VT_UINT: ret_val = static_cast<uint64_t>(last_value_.vDataValue.uintVal); break;
-    case VT_BOOL: ret_val = last_value_.vDataValue.boolVal == VARIANT_TRUE ? 1 : 0;
+    case VT_BOOL: ret_val = last_value_.vDataValue.boolVal == VARIANT_TRUE ? 1 : 0; break;
     default: ;
     }
 
@@ -343,8 +343,13 @@ QString OPCTag::GetFullName() const
     return QString("%1@%2#%3").arg(hostname_, server_name_, tag_name_);
 }
 
-void OPCTag::SetCommentString(QString str) {
+void OPCTag::SetCommentString(const QString& str) {
     comment_ = str;
+}
+
+void OPCTag::SetCommentString(QString &&str)
+{
+    comment_ = std::move(str);
 }
 
 OpcValueType OPCTag::GetValue(bool use_substitute_values) const
@@ -371,7 +376,7 @@ std::optional<double> OPCTag::GetGainOption() const
     return gain_value_;
 }
 
-void OPCTag::AddEnumStringValues(QString raw_value, QString substitute_value)
+void OPCTag::AddEnumStringValues(const QString &raw_value, const QString &substitute_value)
 {
     substitute_values_[raw_value] = substitute_value;
 }
@@ -394,13 +399,18 @@ bool OPCTag::SetValueToWrite(OpcValueType val)
     QString strVal{};
     if(ValueIsInteger() || ValueIsUnsignedInteger() || ValueIsBool()) iVal = toLongLong(val);
     if(ValueIsReal()) dVal = toDouble(val);
+
+    if(gain_value_.has_value() && gain_value_.value() != 0) {
+        dVal /= gain_value_.value();
+    }
+
     if(ValueIsString()) strVal = toString(val);
     VARIANT tVar;
     tVar.vt = type_;
     switch(type_) {
     case VT_I2: tVar.iVal = static_cast<SHORT>(iVal); break;
     case VT_I4: tVar.lVal = static_cast<LONG>(iVal); break;
-    case VT_I1: tVar.iVal = static_cast<SHORT>(iVal); break;
+    case VT_I1: tVar.bVal = static_cast<SHORT>(iVal); break;
     case VT_I8: tVar.llVal = static_cast<LONGLONG>(iVal); break;
     case VT_INT: tVar.intVal = static_cast<INT>(iVal); break;
     case VT_R4: tVar.fltVal = static_cast<FLOAT>(dVal); break;
