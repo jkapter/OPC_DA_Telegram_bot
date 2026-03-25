@@ -10,6 +10,7 @@
 #include <QFile>
 #include <QtCore>
 #include <QString>
+#include <QtEnvironmentVariables>
 
 #include "logger.h"
 #include "tgbotmanager.h"
@@ -33,6 +34,10 @@ int main(int argc, char *argv[])
     int exit_code = 0;
     Logger log(QDir::currentPath(), QString("log.txt"));
     Logger::SetMaxSize(200000);
+
+    qputenv("https_proxy", "socks5://127.0.0.1:10808");
+    qputenv("http_proxy",  "socks5://127.0.0.1:10808");
+    qputenv("all_proxy",   "socks5://127.0.0.1:10808");
 
     QApplication app(argc, argv);
 

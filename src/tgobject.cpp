@@ -1,6 +1,7 @@
 #include "tgobject.h"
 
 #include "tgbot/Bot.h"
+#include "tgbot/net/CurlHttpClient.h"
 
 #include <QJsonObject>
 #include <QJsonArray>
@@ -81,7 +82,8 @@ void TGParent::ResetTgBotPtr()
 
 void TGParent::InitializeBot(const std::string& token)
 {
-    bot_ptr_ = std::make_unique<TgBot::Bot>(token);
+    http_client_ = std::make_shared<TgBot::CurlHttpClient>();
+    bot_ptr_ = std::make_unique<TgBot::Bot>(token, *http_client_);
     ClearChatIdData();
 }
 

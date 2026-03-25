@@ -17,6 +17,7 @@
 #include "tgbot/types/InlineKeyboardMarkup.h"
 #include "tgbot/types/InlineKeyboardButton.h"
 #include "tgbot/types/CallbackQuery.h"
+#include "tgbot/net/CurlHttpClient.h"
 
 namespace TgBot { class Bot;}
 namespace OPC_HELPER {
@@ -66,6 +67,7 @@ public:
 private:
     OPC_HELPER::OPCDataManager* opc_ptr_ = nullptr;
     std::unique_ptr<TgBot::Bot> bot_ptr_;
+    std::shared_ptr<TgBot::CurlHttpClient> http_client_;
     std::unordered_map<USER_TYPE, std::unordered_set<int64_t>> user_permission_to_chat_id_;
     std::unordered_set<int64_t> inactive_users_;
     std::optional<QString> bot_name_for_channel_;

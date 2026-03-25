@@ -8,6 +8,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include <QPointer>
 
 #include "opcclientworker.h"
 #include "opctag.h"
@@ -43,6 +44,7 @@ OPCDataManager::~OPCDataManager() {
     }
 
     if(opc_threads_on_request_count_ > 0 || period_reading_on_) {
+        request_stop_periodic_reading_ = true;
         emit sg_stop_reading();
         QTimer::singleShot(TIME_WAITING_THREAD_, this,
                            [this](){
@@ -526,7 +528,10 @@ void OPCDataManager::sl_periodic_thread_finished()
     emit sg_periodic_finished();
     emit sg_set_text_state("OPC клиент остановлен");
     if(!request_stop_periodic_reading_) {
-        QTimer::singleShot(opc_period_reading_*2000, this, [this]() {this->StartPeriodReading();});
+        QPointer<OPCDataManager> self(this);
+        QTimer::singleShot(opc_period_reading_*2000, this, [self]() {
+            if(self) self->StartPeriodReading();
+        });
         QString log_message = QString("OPCDataManager: неожиданное завершение потока клиента, перезапуск.");
         emit sg_send_message_to_console(log_message);
         qCritical() << log_message;

@@ -259,7 +259,7 @@ void TGEventsConfigurationWidget::load_data_from_event_(const std::string &id)
 
     auto [tag_ptr, type, ival, ihys] = current_event_->GetTagTrigger();
     if(tag_ptr) {
-        ui->leTagNameEvent->setText(QString("%1: %2").arg(tg_bot_manager_.GetTGParent()->OPCManager()->GetTagId(tag_ptr->GetTagName())).arg(tag_ptr->GetTagName()));
+        ui->leTagNameEvent->setText(QString("%1: %2").arg(tg_bot_manager_.GetTGParent()->OPCManager()->GetTagId(tag_ptr->GetFullName())).arg(tag_ptr->GetTagName()));
         int cb_index = 0;
 
         switch(type) {

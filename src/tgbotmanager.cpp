@@ -12,6 +12,8 @@
 #include <QJsonParseError>
 #include <QJsonDocument>
 #include <QMessageBox>
+#include <QFuture>
+#include <QtConcurrent/QtConcurrent>
 
 #include "tgbot/tools/StringTools.h"
 #include "tgbot/Bot.h"
