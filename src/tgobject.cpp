@@ -249,7 +249,7 @@ const std::string TGMessage::GetTextToSend() const
             message += it;
         }
     }
-
+    screen_symbols_(message, screened_symbols_);
     return message;
 }
 
