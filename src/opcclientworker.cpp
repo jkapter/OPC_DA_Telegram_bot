@@ -90,6 +90,7 @@ void OPCDAWorker::sl_read_tags()
 void OPCDAWorker::sl_process()
 {
     opc_client_.reset(new OPC_HELPER::COPCClient());
+    QObject::connect(opc_client_.get(), SIGNAL(sg_send_message_to_console(QString)), this, SIGNAL(sg_send_message_to_console(QString)));
     opc_client_->AddTags(tags_);
 
     if(period_reading_ > 0) {
